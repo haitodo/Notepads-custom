@@ -13,7 +13,6 @@ namespace Notepads.Core
     using Notepads.Services;
     using Notepads.Utilities;
     using Windows.ApplicationModel.DataTransfer;
-    using Windows.ApplicationModel.Resources;
     using Windows.System;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Controls;

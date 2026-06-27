@@ -10,10 +10,6 @@ namespace Notepads.Services
     using Notepads.Settings;
     using Notepads.Utilities;
     using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
     using Windows.UI.Text;
     using Microsoft.UI.Xaml;
 

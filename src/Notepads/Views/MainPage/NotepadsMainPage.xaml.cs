@@ -21,7 +21,6 @@ namespace Notepads.Views.MainPage
     using Notepads.Views.Settings;
     using Windows.ApplicationModel.Activation;
     using Windows.ApplicationModel.DataTransfer;
-    using Windows.ApplicationModel.Resources;
     using Windows.Storage;
     using Windows.System;
     using Windows.UI.ViewManagement;

@@ -11,10 +11,6 @@ namespace Notepads.Utilities
     using Windows.Foundation;
     using ApplicationLanguages = Microsoft.Windows.Globalization.ApplicationLanguages;
     using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
     using Windows.UI.Text;
     using Microsoft.UI.Xaml.Controls;
     using Microsoft.UI.Xaml.Media;

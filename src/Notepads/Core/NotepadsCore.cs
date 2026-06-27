@@ -19,7 +19,6 @@ namespace Notepads.Core
     using Notepads.Utilities;
     using Notepads.Controls;
     using Windows.ApplicationModel.DataTransfer;
-    using Windows.ApplicationModel.Resources;
     using Windows.Foundation.Collections;
     using Windows.Storage;
     using Windows.UI;
@@ -330,7 +329,7 @@ namespace Notepads.Core
         public void SwitchTo(ITextEditor textEditor)
         {
             var item = GetTextEditorSetsViewItem(textEditor);
-            if (_sets.SelectedItem != item)
+            if (_sets.SelectedItem as SetsViewItem != item)
             {
                 _sets.SelectedItem = item;
                 _sets.ScrollIntoView(item);

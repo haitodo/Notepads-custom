@@ -11,11 +11,6 @@ namespace Notepads.Views.Settings
     using System.Text;
     using Services;
     using Utilities;
-    using Windows.ApplicationModel.Resources;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
     using Microsoft.UI.Text;
     using Windows.UI.Text;
     using Microsoft.UI.Xaml;

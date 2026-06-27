@@ -15,7 +15,6 @@ namespace Notepads.Utilities
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using UtfUnknown;
-    using Windows.ApplicationModel.Resources;
     using Windows.Storage;
     using Windows.Storage.FileProperties;
     using Windows.Storage.Provider;

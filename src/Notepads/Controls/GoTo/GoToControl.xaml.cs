@@ -8,7 +8,6 @@ namespace Notepads.Controls.GoTo
     using Extensions;
     using System;
     using Services;
-    using Windows.ApplicationModel.Resources;
     using Windows.System;
     using Windows.UI;
     using Microsoft.UI.Xaml;

@@ -6,7 +6,6 @@
 namespace Notepads.Controls.Dialog
 {
     using Microsoft.UI;
-    using Windows.ApplicationModel.Resources;
     using Windows.UI;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Controls;

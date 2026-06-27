@@ -326,35 +326,35 @@ namespace Notepads.Views.MainPage
             var selectedEditor = NotepadsCore.GetSelectedTextEditor();
             if (selectedEditor == null) return;
 
-            if (sender == FileModificationStateIndicator)
+            if (sender as Grid == FileModificationStateIndicator)
             {
                 FileModificationStateIndicatorClicked(selectedEditor);
             }
-            else if (sender == PathIndicator && !string.IsNullOrEmpty(PathIndicator.Text))
+            else if (sender as TextBlock == PathIndicator && !string.IsNullOrEmpty(PathIndicator.Text))
             {
                 PathIndicatorClicked(selectedEditor);
             }
-            else if (sender == ModificationIndicator)
+            else if (sender as TextBlock == ModificationIndicator)
             {
                 ModificationIndicatorClicked(selectedEditor);
             }
-            else if (sender == LineColumnIndicator)
+            else if (sender as TextBlock == LineColumnIndicator)
             {
                 LineColumnIndicatorClicked(selectedEditor);
             }
-            else if (sender == FontZoomIndicator)
+            else if (sender as TextBlock == FontZoomIndicator)
             {
                 FontZoomIndicatorClicked(selectedEditor);
             }
-            else if (sender == LineEndingIndicator)
+            else if (sender as TextBlock == LineEndingIndicator)
             {
                 LineEndingIndicatorClicked(selectedEditor);
             }
-            else if (sender == EncodingIndicator)
+            else if (sender as TextBlock == EncodingIndicator)
             {
                 EncodingIndicatorClicked(selectedEditor);
             }
-            else if (sender == ShadowWindowIndicator)
+            else if (sender as Grid == ShadowWindowIndicator)
             {
                 ShadowWindowIndicatorClicked();
             }

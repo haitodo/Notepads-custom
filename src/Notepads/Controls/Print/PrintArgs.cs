@@ -9,7 +9,6 @@ namespace Notepads.Controls.Print
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Windows.ApplicationModel.Core;
-    using Windows.ApplicationModel.Resources;
     using Windows.Graphics.Printing;
     using Windows.Graphics.Printing.OptionDetails;
     using Microsoft.UI.Xaml;

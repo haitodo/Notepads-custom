@@ -13,7 +13,6 @@ namespace Notepads.Controls.TextEditor
     using Notepads.Services;
     using Notepads.Utilities;
     using Windows.ApplicationModel.DataTransfer;
-    using Windows.ApplicationModel.Resources;
     using Windows.Storage;
     using Windows.System;
     using Windows.UI.Core;

@@ -8,7 +8,6 @@ namespace Notepads.Utilities
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
-    using Windows.ApplicationModel.Resources;
     using ApplicationLanguages = Microsoft.Windows.Globalization.ApplicationLanguages;
 
     public class LanguageItem

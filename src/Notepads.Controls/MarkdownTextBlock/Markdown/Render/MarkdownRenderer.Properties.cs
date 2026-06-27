@@ -8,10 +8,6 @@ namespace Notepads.Controls.Markdown
     using System.Reflection;
     using Windows.Foundation.Metadata;
     using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
-    using Microsoft.UI.Text;
     using Windows.UI.Text;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Controls;
