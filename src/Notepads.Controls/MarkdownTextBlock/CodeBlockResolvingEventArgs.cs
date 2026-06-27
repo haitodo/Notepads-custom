@@ -6,7 +6,7 @@
 namespace Notepads.Controls
 {
     using System;
-    using Windows.UI.Xaml.Documents;
+    using Microsoft.UI.Xaml.Documents;
 
     /// <summary>
     /// Arguments for the <see cref="MarkdownTextBlock.CodeBlockResolving"/> event when a Code Block is being rendered.

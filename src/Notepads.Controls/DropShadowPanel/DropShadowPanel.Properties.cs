@@ -5,9 +5,10 @@
 
 namespace Notepads.Controls
 {
+    using Microsoft.UI;
     using Windows.UI;
-    using Windows.UI.Composition;
-    using Windows.UI.Xaml;
+    using Microsoft.UI.Composition;
+    using Microsoft.UI.Xaml;
 
     /// <summary>
     /// The <see cref="DropShadowPanel"/> control allows the creation of a DropShadow for any Xaml FrameworkElement in markup
@@ -63,8 +64,8 @@ namespace Notepads.Controls
         public DropShadow DropShadow => _dropShadow;
 
         /// <summary>
-        /// Gets or sets the mask of the underlying <see cref="Windows.UI.Composition.DropShadow"/>.
-        /// Allows for a custom <see cref="Windows.UI.Composition.CompositionBrush"/> to be set.
+        /// Gets or sets the mask of the underlying <see cref="Microsoft.UI.Composition.DropShadow"/>.
+        /// Allows for a custom <see cref="Microsoft.UI.Composition.CompositionBrush"/> to be set.
         /// </summary>
         public CompositionBrush Mask
         {

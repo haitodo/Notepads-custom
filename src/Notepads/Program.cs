@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -10,87 +10,99 @@ namespace Notepads
     using System.Threading.Tasks;
     using Notepads.Services;
     using Notepads.Settings;
-    using Windows.ApplicationModel;
     using Windows.ApplicationModel.Activation;
+    using Microsoft.Windows.AppLifecycle;
 
     public static class Program
     {
+        [STAThread]
         static void Main(string[] args)
         {
+            try
+            {
+                WinRT.ComWrappersSupport.InitializeComWrappers();
 #if DEBUG
-            Task.Run(LoggingService.InitializeFileSystemLoggingAsync);
+                Task.Run(LoggingService.InitializeFileSystemLoggingAsync);
 #endif
 
-            IActivatedEventArgs activatedArgs = AppInstance.GetActivatedEventArgs();
+                var appArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+                IActivatedEventArgs activatedArgs = appArgs.Data as IActivatedEventArgs;
 
-            //if (activatedArgs == null)
-            //{
-            //    // No activated event args, so this is not an activation via the multi-instance ID
-            //    // Just create a new instance and let App OnActivated resolve the launch
-            //    App.IsGameBarWidget = true;
-            //    App.IsPrimaryInstance = true;
-            //    Windows.UI.Xaml.Application.Start(p => new App());
-            //}
-
-            if (activatedArgs is FileActivatedEventArgs)
-            {
-                RedirectOrCreateNewInstance();
-            }
-            else if (activatedArgs is CommandLineActivatedEventArgs)
-            {
-                RedirectOrCreateNewInstance();
-            }
-            else if (activatedArgs is ProtocolActivatedEventArgs protocolActivatedEventArgs)
-            {
-                LoggingService.LogInfo($"[{nameof(Main)}] [ProtocolActivated] Protocol: {protocolActivatedEventArgs.Uri}");
-                var protocol = NotepadsProtocolService.GetOperationProtocol(protocolActivatedEventArgs.Uri, out _);
-                if (protocol == NotepadsOperationProtocol.OpenNewInstance)
+                if (activatedArgs is FileActivatedEventArgs)
                 {
-                    OpenNewInstance();
+                    RedirectOrCreateNewInstance();
+                }
+                else if (activatedArgs is CommandLineActivatedEventArgs)
+                {
+                    RedirectOrCreateNewInstance();
+                }
+                else if (activatedArgs is ProtocolActivatedEventArgs protocolActivatedEventArgs)
+                {
+                    LoggingService.LogInfo($"[{nameof(Main)}] [ProtocolActivated] Protocol: {protocolActivatedEventArgs.Uri}");
+                    var protocol = NotepadsProtocolService.GetOperationProtocol(protocolActivatedEventArgs.Uri, out _);
+                    if (protocol == NotepadsOperationProtocol.OpenNewInstance)
+                    {
+                        OpenNewInstance();
+                    }
+                    else
+                    {
+                        RedirectOrCreateNewInstance();
+                    }
+                }
+                else if (activatedArgs is LaunchActivatedEventArgs launchActivatedEventArgs)
+                {
+                    bool handled = false;
+
+                    if (!string.IsNullOrEmpty(launchActivatedEventArgs.Arguments))
+                    {
+                        var protocol = NotepadsProtocolService.GetOperationProtocol(new Uri(launchActivatedEventArgs.Arguments), out _);
+                        if (protocol == NotepadsOperationProtocol.OpenNewInstance)
+                        {
+                            handled = true;
+                            OpenNewInstance();
+                        }
+                    }
+
+                    if (!handled)
+                    {
+                        RedirectOrCreateNewInstance();
+                    }
                 }
                 else
                 {
                     RedirectOrCreateNewInstance();
                 }
             }
-            else if (activatedArgs is LaunchActivatedEventArgs launchActivatedEventArgs)
+            catch (Exception ex)
             {
-                bool handled = false;
-
-                if (!string.IsNullOrEmpty(launchActivatedEventArgs.Arguments))
+                try
                 {
-                    var protocol = NotepadsProtocolService.GetOperationProtocol(new Uri(launchActivatedEventArgs.Arguments), out _);
-                    if (protocol == NotepadsOperationProtocol.OpenNewInstance)
-                    {
-                        handled = true;
-                        OpenNewInstance();
-                    }
+                    var crashPath = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "Notepads",
+                        "crash_program.txt");
+                    System.IO.File.WriteAllText(crashPath, ex.ToString());
                 }
-
-                if (!handled)
+                catch
                 {
-                    RedirectOrCreateNewInstance();
+                    // Ignore
                 }
-            }
-            else
-            {
-                RedirectOrCreateNewInstance();
             }
         }
 
         private static void OpenNewInstance()
         {
-            AppInstance.FindOrRegisterInstanceForKey(App.InstanceId.ToString());
-            Windows.UI.Xaml.Application.Start(p => new App());
+            AppInstance.FindOrRegisterForKey(App.InstanceId.ToString());
+            Microsoft.UI.Xaml.Application.Start(p => new App());
         }
 
         private static void RedirectOrCreateNewInstance()
         {
-            var instance = (GetLastActiveInstance() ?? AppInstance.FindOrRegisterInstanceForKey(App.InstanceId.ToString()));
+            var instance = (GetLastActiveInstance() ?? AppInstance.FindOrRegisterForKey(App.InstanceId.ToString()));
 
-            if (instance.IsCurrentInstance)
+            if (instance.IsCurrent)
             {
-                Windows.UI.Xaml.Application.Start(p => new App());
+                Microsoft.UI.Xaml.Application.Start(p => new App());
             }
             else
             {
@@ -101,14 +113,33 @@ namespace Notepads
                 }
                 else
                 {
-                    instance.RedirectActivationTo();
+                    var appArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+                    instance.RedirectActivationToAsync(appArgs).GetAwaiter().GetResult();
                 }
+            }
+        }
+
+        private static bool IsInstanceProcessRunning(AppInstance instance)
+        {
+            try
+            {
+                using (var process = System.Diagnostics.Process.GetProcessById((int)instance.ProcessId))
+                {
+                    return !process.HasExited;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 
         private static AppInstance GetLastActiveInstance()
         {
-            var instances = AppInstance.GetInstances();
+            var currentProcessId = AppInstance.GetCurrent().ProcessId;
+            var instances = AppInstance.GetInstances()
+                .Where(i => i.ProcessId != currentProcessId && IsInstanceProcessRunning(i))
+                .ToList();
 
             if (instances.Count == 0)
             {
@@ -121,7 +152,7 @@ namespace Notepads
 
             if (!(ApplicationSettingsStore.Read(SettingsKey.ActiveInstanceIdStr) is string activeInstance))
             {
-                return null;
+                return instances.FirstOrDefault();
             }
 
             foreach (var appInstance in instances)

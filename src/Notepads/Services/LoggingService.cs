@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -35,9 +35,6 @@ namespace Notepads.Services
             {
                 return;
             }
-
-            CoreApplication.Suspending += async (sender, args) => { await TryFlushMessageQueueAsync(); };
-            CoreApplication.Resuming += async (sender, args) => { await InitializeLogFileWriterBackgroundTaskAsync(); };
 
             await InitializeLogFileWriterBackgroundTaskAsync();
         }
@@ -165,7 +162,7 @@ namespace Notepads.Services
                     Messages.Add(message);
                 }
 
-                await FileIO.AppendLinesAsync(_logFile, Messages);
+                await System.IO.File.AppendAllLinesAsync(_logFile.Path, Messages);
                 Messages.Clear();
                 return true;
             }

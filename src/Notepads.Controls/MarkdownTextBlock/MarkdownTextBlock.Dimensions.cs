@@ -5,8 +5,8 @@
 
 namespace Notepads.Controls
 {
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Media;
 
     /// <summary>
     /// Measurement Properties for elements in the Markdown.

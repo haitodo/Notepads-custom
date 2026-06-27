@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 // Source: https://github.com/windows-toolkit/WindowsCommunityToolkit/blob/8464f8e5263686c1484732bdea86ebba3f30a075/Microsoft.Toolkit.Uwp.UI/Helpers/ThemeListener.cs
@@ -10,7 +10,7 @@ namespace Notepads.Controls.Helpers
     using Windows.Foundation.Metadata;
     using Windows.System;
     using Windows.UI.ViewManagement;
-    using Windows.UI.Xaml;
+    using Microsoft.UI.Xaml;
 
     /// <summary>
     /// The Delegate for a ThemeChanged Event.
@@ -64,8 +64,23 @@ namespace Notepads.Controls.Helpers
 
             DispatcherQueue = dispatcherQueue ?? DispatcherQueue.GetForCurrentThread();
 
-            _accessible.HighContrastChanged += Accessible_HighContrastChanged;
-            _settings.ColorValuesChanged += Settings_ColorValuesChanged;
+            try
+            {
+                _accessible.HighContrastChanged += Accessible_HighContrastChanged;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to register HighContrastChanged: {ex.Message}");
+            }
+
+            try
+            {
+                _settings.ColorValuesChanged += Settings_ColorValuesChanged;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to register ColorValuesChanged: {ex.Message}");
+            }
 
             // Fallback in case either of the above fail, we'll check when we get activated next.
             if (Window.Current != null)

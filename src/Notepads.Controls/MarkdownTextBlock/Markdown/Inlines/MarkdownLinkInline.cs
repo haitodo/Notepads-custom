@@ -5,7 +5,8 @@
 
 namespace Notepads.Controls.Markdown
 {
-    using Microsoft.Toolkit;
+    using System;
+    using System.Text.RegularExpressions;
     using System;
     using System.Collections.Generic;
 
@@ -186,7 +187,7 @@ namespace Notepads.Controls.Markdown
                 }
 
                 // Check the URL is okay.
-                if (!url.IsEmail())
+                if (!Regex.IsMatch(url, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
                 {
                     if (!Common.IsUrlValid(url))
                     {

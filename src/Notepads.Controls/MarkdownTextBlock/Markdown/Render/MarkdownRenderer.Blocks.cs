@@ -7,11 +7,16 @@ namespace Notepads.Controls.Markdown
 {
     using System;
     using System.Collections.Generic;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
     using Windows.UI.Text;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Documents;
-    using Windows.UI.Xaml.Shapes;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Documents;
+    using Microsoft.UI.Xaml.Shapes;
 
     /// <summary>
     /// Block UI Methods for UWP UI Creation.

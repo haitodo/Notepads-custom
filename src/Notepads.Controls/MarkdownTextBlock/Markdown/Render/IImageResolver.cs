@@ -6,7 +6,7 @@
 namespace Notepads.Controls.Markdown
 {
     using System.Threading.Tasks;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml.Media;
 
     /// <summary>
     /// An interface used to resolve images in the markdown.

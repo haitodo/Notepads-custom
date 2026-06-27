@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -22,7 +22,7 @@ namespace Notepads.Utilities
             {
                 _id = value;
                 Name = string.IsNullOrEmpty(value)
-                    ? ResourceLoader.GetForCurrentView().GetString("/Settings/AdvancedPage_LanguagePreferenceSettings_SystemDefaultText")
+                    ? new ResourceLoader().GetString("/Settings/AdvancedPage_LanguagePreferenceSettings_SystemDefaultText")
                     : new CultureInfo(value).NativeName;
             }
         }

@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -16,12 +16,12 @@ namespace Notepads.Controls.TextEditor
     using Windows.Foundation;
     using Windows.System;
     using Windows.UI.Core;
-    using Windows.UI.Text;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Controls.Primitives;
-    using Windows.UI.Xaml.Input;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Controls.Primitives;
+    using Microsoft.UI.Xaml.Input;
+    using Microsoft.UI.Xaml.Media;
 
     [TemplatePart(Name = ContentElementName, Type = typeof(ScrollViewer))]
     [TemplatePart(Name = RootGridName, Type = typeof(Grid))]
@@ -131,7 +131,6 @@ namespace Notepads.Controls.TextEditor
             VerticalAlignment = VerticalAlignment.Stretch;
             DisplayLineNumbers = AppSettingsService.EditorDisplayLineNumbers;
             DisplayLineHighlighter = AppSettingsService.EditorDisplayLineHighlighter;
-            HandwritingView.BorderThickness = new Thickness(0);
 
             CopyingToClipboard += OnCopyingToClipboard;
             CuttingToClipboard += OnCuttingToClipboard;
@@ -156,7 +155,14 @@ namespace Notepads.Controls.TextEditor
 
             HookExternalEvents();
 
-            Window.Current.CoreWindow.Activated += OnCoreWindowActivated;
+            if (Window.Current != null)
+            {
+                Window.Current.CoreWindow.Activated += OnCoreWindowActivated;
+            }
+            else if (App.MainWindow != null)
+            {
+                App.MainWindow.Activated += OnMainWindowActivated;
+            }
         }
 
         protected override void OnApplyTemplate()
@@ -186,7 +192,7 @@ namespace Notepads.Controls.TextEditor
             _lineNumberGrid.SizeChanged += OnLineNumberGridSizeChanged;
             _rootGrid.SizeChanged += OnRootGridSizeChanged;
 
-            Microsoft.Toolkit.Uwp.UI.ScrollViewerExtensions.SetEnableMiddleClickScrolling(_contentScrollViewer, true);
+            CommunityToolkit.WinUI.UI.ScrollViewerExtensions.SetEnableMiddleClickScrolling(_contentScrollViewer, true);
         }
 
         // Unhook events and clear state
@@ -235,7 +241,14 @@ namespace Notepads.Controls.TextEditor
 
             UnhookExternalEvents();
 
-            Window.Current.CoreWindow.Activated -= OnCoreWindowActivated;
+            if (Window.Current != null)
+            {
+                Window.Current.CoreWindow.Activated -= OnCoreWindowActivated;
+            }
+            else if (App.MainWindow != null)
+            {
+                App.MainWindow.Activated -= OnMainWindowActivated;
+            }
         }
 
         private KeyboardCommandHandler GetKeyboardCommandHandler()
@@ -299,10 +312,19 @@ namespace Notepads.Controls.TextEditor
             }, this);
         }
 
-        private void OnCoreWindowActivated(CoreWindow sender, WindowActivatedEventArgs args)
+        private void OnCoreWindowActivated(CoreWindow sender, Windows.UI.Core.WindowActivatedEventArgs args)
         {
             if (args.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.CodeActivated ||
                 args.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.PointerActivated)
+            {
+                _shouldResetScrollViewerToLastKnownPositionAfterRegainingFocus = true;
+            }
+        }
+
+        private void OnMainWindowActivated(object sender, Microsoft.UI.Xaml.WindowActivatedEventArgs args)
+        {
+            if (args.WindowActivationState == Microsoft.UI.Xaml.WindowActivationState.CodeActivated ||
+                args.WindowActivationState == Microsoft.UI.Xaml.WindowActivationState.PointerActivated)
             {
                 _shouldResetScrollViewerToLastKnownPositionAfterRegainingFocus = true;
             }

@@ -7,10 +7,15 @@ namespace Notepads.Controls.Markdown
 {
     using System.Reflection;
     using Windows.Foundation.Metadata;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
     using Windows.UI.Text;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Media;
 
     /// <summary>
     /// Properties for the UWP Markdown Renderer

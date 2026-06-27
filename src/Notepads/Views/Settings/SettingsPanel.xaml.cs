@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -7,8 +7,8 @@ namespace Notepads.Views.Settings
 {
     using System;
     using Notepads.Services;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Media.Animation;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Media.Animation;
 
     public sealed partial class SettingsPanel : Page
     {

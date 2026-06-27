@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -6,7 +6,7 @@
 namespace Notepads.Controls.TextEditor
 {
     using System;
-    using Windows.UI.Xaml;
+    using Microsoft.UI.Xaml;
 
     public partial class TextEditorCore
     {
@@ -36,7 +36,7 @@ namespace Notepads.Controls.TextEditor
                 return;
             }
 
-            Document.Selection.GetRect(Windows.UI.Text.PointOptions.ClientCoordinates,
+            Document.Selection.GetRect(Microsoft.UI.Text.PointOptions.ClientCoordinates,
                 out Windows.Foundation.Rect selectionRect, out var _);
 
             var singleLineHeight = GetSingleLineHeight();

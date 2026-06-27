@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -9,7 +9,7 @@ namespace Notepads.Utilities
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Microsoft.Toolkit.Uwp.Helpers;
+    using CommunityToolkit.WinUI.Helpers;
     using Notepads.Core;
     using Windows.Storage;
 
@@ -64,26 +64,26 @@ namespace Notepads.Utilities
 
         public static async Task<bool> IsSessionMetaDataFileExists(string sessionMetaDataFileName)
         {
-            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder localFolder = await FileSystemUtility.GetLocalFolderAsync();
             return await localFolder.FileExistsAsync(sessionMetaDataFileName);
         }
 
         public static async Task<string> GetSerializedSessionMetaDataAsync(string sessionMetaDataFileName)
         {
-            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder localFolder = await FileSystemUtility.GetLocalFolderAsync();
             return await localFolder.ReadTextFromFileAsync(sessionMetaDataFileName);
         }
 
         public static async Task SaveSerializedSessionMetaDataAsync(string serializedData, string sessionMetaDataFileName)
         {
-            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder localFolder = await FileSystemUtility.GetLocalFolderAsync();
             StorageFile metaDataFile = await FileSystemUtility.GetOrCreateFileAsync(localFolder, sessionMetaDataFileName);
             await FileSystemUtility.WriteTextToFileAsync(metaDataFile, serializedData);
         }
 
         public static async Task DeleteSerializedSessionMetaDataAsync(string sessionMetaDataFileName)
         {
-            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder localFolder = await FileSystemUtility.GetLocalFolderAsync();
 
             StorageFile sessionDataFile = null;
 

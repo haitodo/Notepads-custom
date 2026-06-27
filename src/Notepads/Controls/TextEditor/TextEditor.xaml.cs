@@ -1,4 +1,4 @@
-﻿namespace Notepads.Controls.TextEditor
+namespace Notepads.Controls.TextEditor
 {
     using System;
     using System.Collections.Generic;
@@ -17,11 +17,11 @@
     using Windows.Storage;
     using Windows.System;
     using Windows.UI.Core;
-    using Windows.UI.Text;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Controls.Primitives;
-    using Windows.UI.Xaml.Input;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Controls.Primitives;
+    using Microsoft.UI.Xaml.Input;
 
     public enum TextEditorMode
     {
@@ -143,7 +143,7 @@
 
         private bool _isContentPreviewPanelOpened;
 
-        private readonly ResourceLoader _resourceLoader = ResourceLoader.GetForCurrentView();
+        private readonly ResourceLoader _resourceLoader = new ResourceLoader();
 
         private CancellationTokenSource _fileStatusCheckerCancellationTokenSource;
 

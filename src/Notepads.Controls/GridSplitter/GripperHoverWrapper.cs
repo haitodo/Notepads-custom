@@ -6,8 +6,8 @@
 namespace Notepads.Controls
 {
     using Windows.UI.Core;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Input;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Input;
 
     internal class GripperHoverWrapper
     {

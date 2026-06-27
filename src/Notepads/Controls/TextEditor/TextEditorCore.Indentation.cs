@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -6,7 +6,7 @@
 namespace Notepads.Controls.TextEditor
 {
     using System.Text;
-    using Windows.UI.Text;
+    using Microsoft.UI.Text;
 
     public partial class TextEditorCore
     {
@@ -66,7 +66,7 @@ namespace Notepads.Controls.TextEditor
                     indentedStringBuilder.ToString())) return;
             }
 
-            Document.Selection.GetRect(Windows.UI.Text.PointOptions.Transform, out Windows.Foundation.Rect rect,
+            Document.Selection.GetRect(Microsoft.UI.Text.PointOptions.Transform, out Windows.Foundation.Rect rect,
                 out var _);
             GetScrollViewerPosition(out var horizontalOffset, out var verticalOffset);
             var wasSelectionInView = IsSelectionRectInView(rect, horizontalOffset, verticalOffset);
@@ -189,7 +189,7 @@ namespace Notepads.Controls.TextEditor
                     indentedStringBuilder.ToString())) return;
             }
 
-            Document.Selection.GetRect(Windows.UI.Text.PointOptions.Transform, out Windows.Foundation.Rect rect,
+            Document.Selection.GetRect(Microsoft.UI.Text.PointOptions.Transform, out Windows.Foundation.Rect rect,
                 out var _);
             GetScrollViewerPosition(out var horizontalOffset, out var verticalOffset);
             var wasSelectionInView = IsSelectionRectInView(rect, horizontalOffset, verticalOffset);

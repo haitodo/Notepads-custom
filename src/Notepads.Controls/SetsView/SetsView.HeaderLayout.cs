@@ -6,7 +6,7 @@ namespace Notepads.Controls
 {
     using System;
     using System.Linq;
-    using Windows.UI.Xaml;
+    using Microsoft.UI.Xaml;
 
     /// <summary>
     /// SetsView methods related to calculating the width of the <see cref="SetsViewItem"/> Headers.

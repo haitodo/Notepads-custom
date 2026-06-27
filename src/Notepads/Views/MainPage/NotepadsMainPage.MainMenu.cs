@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -11,10 +11,10 @@ namespace Notepads.Views.MainPage
     using Windows.Storage;
     using Windows.Graphics.Printing;
     using Windows.UI.ViewManagement;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Controls.Primitives;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Controls.Primitives;
+    using Microsoft.UI.Xaml.Media;
     using Notepads.Services;
 
     public sealed partial class NotepadsMainPage
@@ -101,11 +101,11 @@ namespace Notepads.Views.MainPage
             }
 
             MenuFullScreenButton.Text = _resourceLoader.GetString(
-                ApplicationView.GetForCurrentView().IsFullScreenMode
+                App.MainWindow.AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen
                     ? "App_ExitFullScreenMode_Text"
                     : "App_EnterFullScreenMode_Text");
             MenuCompactOverlayButton.Text = _resourceLoader.GetString(
-                ApplicationView.GetForCurrentView().ViewMode == ApplicationViewMode.CompactOverlay
+                App.MainWindow.AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.CompactOverlay
                     ? "App_ExitCompactOverlayMode_Text"
                     : "App_EnterCompactOverlayMode_Text");
             MenuSaveAllButton.IsEnabled = NotepadsCore.HaveUnsavedTextEditor();

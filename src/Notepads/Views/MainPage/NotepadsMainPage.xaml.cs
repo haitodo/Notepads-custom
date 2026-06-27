@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -25,11 +25,11 @@ namespace Notepads.Views.MainPage
     using Windows.Storage;
     using Windows.System;
     using Windows.UI.ViewManagement;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Input;
-    using Windows.UI.Xaml.Media.Animation;
-    using Windows.UI.Xaml.Navigation;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Input;
+    using Microsoft.UI.Xaml.Media.Animation;
+    using Microsoft.UI.Xaml.Navigation;
     using Windows.Graphics.Printing;
 
     public sealed partial class NotepadsMainPage : Page
@@ -40,7 +40,7 @@ namespace Notepads.Views.MainPage
         private string _appLaunchCmdArgs;
         private Uri _appLaunchUri;
 
-        private readonly ResourceLoader _resourceLoader = ResourceLoader.GetForCurrentView();
+        private readonly ResourceLoader _resourceLoader = new ResourceLoader();
 
         private bool _loaded = false;
         private bool _lastTabMovedToAnotherInstance = false;
@@ -89,8 +89,11 @@ namespace Notepads.Views.MainPage
 
             _defaultNewFileName = _resourceLoader.GetString("TextEditor_DefaultNewFileName");
 
-            // Set custom title bar dragging area
-            Window.Current.SetTitleBar(AppTitleBar);
+            this.Loaded += (sender, e) =>
+            {
+                // Set custom title bar dragging area after page is loaded and in visual tree
+                App.MainWindow.SetTitleBar(AppTitleBar);
+            };
 
             InitializeNotificationCenter();
             InitializeThemeSettings();
@@ -109,8 +112,19 @@ namespace Notepads.Views.MainPage
             }
 
             // Register for content Sharing
-            Windows.ApplicationModel.DataTransfer.DataTransferManager.GetForCurrentView().DataRequested += MainPage_DataRequested;
-            Windows.UI.Core.Preview.SystemNavigationManagerPreview.GetForCurrentView().CloseRequested += MainPage_CloseRequested;
+            try
+            {
+                Windows.ApplicationModel.DataTransfer.DataTransferManager.GetForCurrentView().DataRequested += MainPage_DataRequested;
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogWarning($"Failed to register for content Sharing: {ex.Message}");
+            }
+
+            if (App.MainWindow != null)
+            {
+                App.MainWindow.AppWindow.Closing += AppWindow_Closing;
+            }
 
             if (App.IsGameBarWidget)
             {
@@ -118,8 +132,10 @@ namespace Notepads.Views.MainPage
             }
             else
             {
-                Window.Current.SizeChanged += WindowSizeChanged;
-                Window.Current.VisibilityChanged += WindowVisibilityChangedEventHandler;
+                if (App.MainWindow != null)
+                {
+                    App.MainWindow.SizeChanged += WindowSizeChanged;
+                }
             }
         }
 
@@ -288,32 +304,14 @@ namespace Notepads.Views.MainPage
 
             await BuildOpenRecentButtonSubItemsAsync();
 
-            if (!App.IsGameBarWidget)
+            if (!App.IsGameBarWidget && App.MainWindow != null)
             {
-                // An issue with the Game Bar extension model and Windows platform prevents the Notepads process from exiting cleanly
-                // when more than one CoreWindow has been created, and NotepadsMainPage is the last to close. The common case for this
-                // is to open Notepads in Game Bar, then open its settings, then close the settings and finally close Notepads.
-                // This puts the process in a bad state where it will no longer open in Game Bar and the Notepads process is orphaned.
-                // To work around this do not use the EnteredBackground event when running as a widget.
-                // Microsoft is tracking this issue as VSO#25735260
-                Application.Current.EnteredBackground -= App_EnteredBackground;
-                Application.Current.EnteredBackground += App_EnteredBackground;
+                App.MainWindow.Activated -= MainWindow_Activated;
+                App.MainWindow.Activated += MainWindow_Activated;
 
-                Window.Current.CoreWindow.Activated -= CoreWindow_Activated;
-                Window.Current.CoreWindow.Activated += CoreWindow_Activated;
+                App.MainWindow.Closed -= MainWindow_Closed;
+                App.MainWindow.Closed += MainWindow_Closed;
             }
-        }
-
-        private async void App_EnteredBackground(object sender, Windows.ApplicationModel.EnteredBackgroundEventArgs e)
-        {
-            var deferral = e.GetDeferral();
-
-            if (AppSettingsService.IsSessionSnapshotEnabled)
-            {
-                await SessionManager.SaveSessionAsync();
-            }
-
-            deferral.Complete();
         }
 
         public void ExecuteProtocol(Uri uri)
@@ -321,21 +319,29 @@ namespace Notepads.Views.MainPage
             LoggingService.LogInfo($"[{nameof(NotepadsMainPage)}] Executing protocol: {uri}", consoleOnly: true);
         }
 
-        private void CoreWindow_Activated(Windows.UI.Core.CoreWindow sender, Windows.UI.Core.WindowActivatedEventArgs args)
+        private async void MainWindow_Closed(object sender, WindowEventArgs args)
         {
-            if (args.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.Deactivated)
+            if (AppSettingsService.IsSessionSnapshotEnabled)
             {
-                LoggingService.LogInfo($"[{nameof(NotepadsMainPage)}] CoreWindow Deactivated.", consoleOnly: true);
+                await SessionManager.SaveSessionAsync();
+            }
+        }
+
+        private void MainWindow_Activated(object sender, Microsoft.UI.Xaml.WindowActivatedEventArgs args)
+        {
+            if (args.WindowActivationState == Microsoft.UI.Xaml.WindowActivationState.Deactivated)
+            {
+                LoggingService.LogInfo($"[{nameof(NotepadsMainPage)}] MainWindow Deactivated.", consoleOnly: true);
                 NotepadsCore.GetSelectedTextEditor()?.StopCheckingFileStatus();
                 if (AppSettingsService.IsSessionSnapshotEnabled)
                 {
                     SessionManager.StopSessionBackup();
                 }
             }
-            else if (args.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.PointerActivated ||
-                     args.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.CodeActivated)
+            else if (args.WindowActivationState == Microsoft.UI.Xaml.WindowActivationState.PointerActivated ||
+                     args.WindowActivationState == Microsoft.UI.Xaml.WindowActivationState.CodeActivated)
             {
-                LoggingService.LogInfo($"[{nameof(NotepadsMainPage)}] CoreWindow Activated.", consoleOnly: true);
+                LoggingService.LogInfo($"[{nameof(NotepadsMainPage)}] MainWindow Activated.", consoleOnly: true);
                 Task.Run(() => ApplicationSettingsStore.Write(SettingsKey.ActiveInstanceIdStr, App.InstanceId.ToString()));
                 NotepadsCore.GetSelectedTextEditor()?.StartCheckingFileStatusPeriodically();
                 if (AppSettingsService.IsSessionSnapshotEnabled)
@@ -343,13 +349,6 @@ namespace Notepads.Views.MainPage
                     SessionManager.StartSessionBackup();
                 }
             }
-        }
-
-        private void WindowVisibilityChangedEventHandler(System.Object sender, Windows.UI.Core.VisibilityChangedEventArgs e)
-        {
-            LoggingService.LogInfo($"[{nameof(NotepadsMainPage)}] Window Visibility Changed, Visible = {e.Visible}.", consoleOnly: true);
-            // Perform operations that should take place when the application becomes visible rather than
-            // when it is prelaunched, such as building a what's new feed
         }
 
         // Content sharing
@@ -369,23 +368,31 @@ namespace Notepads.Views.MainPage
             }
         }
 
-        private async void MainPage_CloseRequested(object sender, Windows.UI.Core.Preview.SystemNavigationCloseRequestedPreviewEventArgs e)
+        private bool _isClosingFromAppWindow = false;
+
+        private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs e)
         {
-            var deferral = e.GetDeferral();
+            if (_isClosingFromAppWindow)
+            {
+                return;
+            }
+
+            e.Cancel = true;
 
             if (AppSettingsService.IsSessionSnapshotEnabled)
             {
-                // Save session before app exit
                 await SessionManager.SaveSessionAsync(() => { SessionManager.IsBackupEnabled = false; });
                 App.InstanceHandlerMutex?.Dispose();
-                deferral.Complete();
+                _isClosingFromAppWindow = true;
+                App.MainWindow.Close();
                 return;
             }
 
             if (!NotepadsCore.HaveUnsavedTextEditor())
             {
                 App.InstanceHandlerMutex?.Dispose();
-                deferral.Complete();
+                _isClosingFromAppWindow = true;
+                App.MainWindow.Close();
                 return;
             }
 
@@ -405,39 +412,32 @@ namespace Notepads.Views.MainPage
                         }
                     }
 
-                    // Prevent app from closing if there is any tab still opens
+                    // Prevent app from closing if there is any tab still open
                     if (count > 0)
                     {
-                        e.Handled = true;
                         await BuildOpenRecentButtonSubItemsAsync();
                     }
                     else
                     {
                         App.InstanceHandlerMutex?.Dispose();
+                        _isClosingFromAppWindow = true;
+                        App.MainWindow.Close();
                     }
-
-                    deferral.Complete();
                 },
                 discardAndExitAction: () =>
                 {
                     App.InstanceHandlerMutex?.Dispose();
-                    deferral.Complete();
+                    _isClosingFromAppWindow = true;
+                    App.MainWindow.Close();
                 },
                 cancelAction: () =>
                 {
-                    e.Handled = true;
-                    deferral.Complete();
+                    // Do nothing
                 });
 
             var result = await DialogManager.OpenDialogAsync(appCloseSaveReminderDialog, awaitPreviousDialog: false);
 
-            if (result == null)
-            {
-                e.Handled = true;
-                deferral.Complete();
-            }
-
-            if (e.Handled && !appCloseSaveReminderDialog.IsAborted)
+            if (result == null || appCloseSaveReminderDialog.IsAborted)
             {
                 NotepadsCore.FocusOnSelectedTextEditor();
             }
@@ -476,7 +476,7 @@ namespace Notepads.Views.MainPage
         {
             if (!App.IsGameBarWidget)
             {
-                ApplicationView.GetForCurrentView().Title = activeTextEditor.EditingFileName ?? activeTextEditor.FileNamePlaceholder;
+                App.MainWindow.Title = activeTextEditor.EditingFileName ?? activeTextEditor.FileNamePlaceholder;
             }
         }
 
@@ -504,11 +504,6 @@ namespace Notepads.Views.MainPage
 
                 if (_lastTabMovedToAnotherInstance || AppSettingsService.ExitWhenLastTabClosed)
                 {
-                    if (!await ApplicationView.GetForCurrentView().TryConsolidateAsync())
-                    {
-                        AnalyticsService.TrackEvent("FailedToConsolidateOnExit");
-                    }
-
                     Application.Current.Exit();
                 }
                 else

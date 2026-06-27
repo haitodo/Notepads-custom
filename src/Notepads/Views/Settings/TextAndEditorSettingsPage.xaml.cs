@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -12,10 +12,15 @@ namespace Notepads.Views.Settings
     using Services;
     using Utilities;
     using Windows.ApplicationModel.Resources;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
     using Windows.UI.Text;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Media;
 
     public class FontStyleItem
     {
@@ -33,7 +38,7 @@ namespace Notepads.Views.Settings
 
     public sealed partial class TextAndEditorSettingsPage : Page
     {
-        private readonly ResourceLoader _resourceLoader = ResourceLoader.GetForCurrentView();
+        private readonly ResourceLoader _resourceLoader = new ResourceLoader();
 
         public IReadOnlyCollection<string> AvailableFonts => FontUtility.GetSystemFontFamilies();
 

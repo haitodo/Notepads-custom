@@ -4,7 +4,7 @@
 
 namespace Notepads.Controls
 {
-    using Windows.UI.Xaml;
+    using Microsoft.UI.Xaml;
 
     /// <summary>
     /// Possible modes for how to layout a <see cref="SetsViewItem"/> Header's Width in the <see cref="SetsView"/>.

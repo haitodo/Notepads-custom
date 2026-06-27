@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -10,9 +10,14 @@ namespace Notepads.Utilities
     using System.Linq;
     using Windows.Foundation;
     using Windows.Globalization;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
     using Windows.UI.Text;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Media;
     using Notepads.Services;
 
     public static class FontUtility

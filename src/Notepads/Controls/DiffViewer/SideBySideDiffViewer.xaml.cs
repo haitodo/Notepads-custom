@@ -1,10 +1,11 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
 
 namespace Notepads.Controls.DiffViewer
 {
+    using Microsoft.UI;
     using System;
     using System.Collections.Generic;
     using System.Threading;
@@ -15,10 +16,10 @@ namespace Notepads.Controls.DiffViewer
     using Windows.System;
     using Windows.UI;
     using Windows.UI.Core;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Input;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Input;
+    using Microsoft.UI.Xaml.Media;
 
     public sealed partial class SideBySideDiffViewer : UserControl, ISideBySideDiffViewer, IDisposable
     {
@@ -132,7 +133,7 @@ namespace Notepads.Controls.DiffViewer
             RightScroller.ChangeView(RightScroller.HorizontalOffset + (-1 * mouseWheelDelta), null, null, false);
         }
 
-        private void OnKeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs args)
+        private void OnKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs args)
         {
             var result = _keyboardCommandHandler.Handle(args);
             if (result.ShouldHandle)

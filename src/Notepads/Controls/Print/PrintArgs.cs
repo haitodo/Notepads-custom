@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -12,10 +12,10 @@ namespace Notepads.Controls.Print
     using Windows.ApplicationModel.Resources;
     using Windows.Graphics.Printing;
     using Windows.Graphics.Printing.OptionDetails;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Printing;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Printing;
+    using Microsoft.UI.Xaml.Media;
     using Services;
     using TextEditor;
 
@@ -74,7 +74,7 @@ namespace Notepads.Controls.Print
         /// </summary>
         private static Canvas PrintCanvas => _sourcePage.FindName("PrintCanvas") as Canvas;
 
-        private static readonly ResourceLoader _resourceLoader = ResourceLoader.GetForCurrentView();
+        private static readonly ResourceLoader _resourceLoader = new ResourceLoader();
 
         /// <summary>
         /// Method that will generate print content for the scenario
@@ -129,8 +129,15 @@ namespace Notepads.Controls.Print
             _printDocument.GetPreviewPage += GetPrintPreviewPage;
             _printDocument.AddPages += AddPrintPages;
 
-            PrintManager printMan = PrintManager.GetForCurrentView();
-            printMan.PrintTaskRequested += PrintTaskRequested;
+            try
+            {
+                PrintManager printMan = GetPrintManagerForCurrentWindow();
+                printMan.PrintTaskRequested += PrintTaskRequested;
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogWarning($"Failed to register PrintManager: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -147,9 +154,16 @@ namespace Notepads.Controls.Print
             _printDocument.GetPreviewPage -= GetPrintPreviewPage;
             _printDocument.AddPages -= AddPrintPages;
 
-            // Remove the handler for printing initialization.
-            PrintManager printMan = PrintManager.GetForCurrentView();
-            printMan.PrintTaskRequested -= PrintTaskRequested;
+            try
+            {
+                // Remove the handler for printing initialization.
+                PrintManager printMan = GetPrintManagerForCurrentWindow();
+                printMan.PrintTaskRequested -= PrintTaskRequested;
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogWarning($"Failed to unregister PrintManager: {ex.Message}");
+            }
 
             PrintCanvas.Children.Clear();
         }
@@ -389,7 +403,7 @@ namespace Notepads.Controls.Print
                     // Notify the user when the print operation fails.
                     if (args.Completion == PrintTaskCompletion.Failed)
                     {
-                        await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                         {
                             NotificationCenter.Instance.PostNotification(_resourceLoader.GetString("Print_NotificationMsg_PrintFailed"), 1500);
                         });
@@ -471,7 +485,7 @@ namespace Notepads.Controls.Print
 
             if (invalidatePreview)
             {
-                await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     _printDocument.InvalidatePreview();
                 });
@@ -487,13 +501,20 @@ namespace Notepads.Controls.Print
             // Catch and print out any errors reported
             try
             {
-                await PrintManager.ShowPrintUIAsync();
+                IntPtr hWnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                await PrintManagerInterop.ShowPrintUIForWindowAsync(hWnd);
             }
             catch (Exception e)
             {
                 NotificationCenter.Instance.PostNotification(
                     _resourceLoader.GetString("Print_NotificationMsg_PrintError") + " " + e.Message + ", hr=" + e.HResult, 1500);
             }
+        }
+
+        private static PrintManager GetPrintManagerForCurrentWindow()
+        {
+            IntPtr hWnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            return PrintManagerInterop.GetForWindow(hWnd);
         }
     }
 }

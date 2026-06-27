@@ -5,7 +5,7 @@
 
 namespace Notepads.Controls.Markdown
 {
-    using Windows.UI.Xaml.Documents;
+    using Microsoft.UI.Xaml.Documents;
 
     /// <summary>
     /// The Context of the Current Document Rendering.

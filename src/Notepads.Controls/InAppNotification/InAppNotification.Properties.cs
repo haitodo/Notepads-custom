@@ -6,7 +6,7 @@
 namespace Notepads.Controls
 {
     using System;
-    using Windows.UI.Xaml;
+    using Microsoft.UI.Xaml;
 
     /// <summary>
     /// In App Notification defines a control to show local notification in the app.

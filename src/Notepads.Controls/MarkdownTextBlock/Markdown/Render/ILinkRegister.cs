@@ -5,8 +5,8 @@
 
 namespace Notepads.Controls.Markdown
 {
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Documents;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Documents;
 
     /// <summary>
     /// An interface used to handle links in the markdown.

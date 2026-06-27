@@ -1,16 +1,17 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
 
 namespace Notepads
 {
+    using Microsoft.UI;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Toolkit.Uwp.Helpers;
+    using CommunityToolkit.WinUI.Helpers;
     using Notepads.Services;
     using Notepads.Settings;
     using Notepads.Utilities;
@@ -21,9 +22,9 @@ namespace Notepads
     using Windows.ApplicationModel.Resources.Core;
     using Windows.UI;
     using Windows.UI.ViewManagement;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Navigation;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Navigation;
 
     public sealed partial class App : Application
     {
@@ -31,6 +32,7 @@ namespace Notepads
 
         public static Guid InstanceId { get; } = Guid.NewGuid();
 
+        public static Window MainWindow { get; private set; }
         public static bool IsPrimaryInstance = false;
         public static bool IsGameBarWidget = false;
 
@@ -61,40 +63,28 @@ namespace Notepads
             ApplicationSettingsStore.Write(SettingsKey.ActiveInstanceIdStr, App.InstanceId.ToString());
 
             InitializeComponent();
-
-            Suspending += OnSuspending;
         }
 
-        /// <summary>
-        /// Invoked when the application is launched normally by the end user.  Other entry points
-        /// will be used such as when the application is launched to open a specific file.
-        /// </summary>
-        /// <param name="e">Details about the launch request and process.</param>
-        protected override async void OnLaunched(LaunchActivatedEventArgs e)
+        protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs e)
         {
-            await ActivateAsync(e);
-        }
-
-        protected override async void OnFileActivated(FileActivatedEventArgs args)
-        {
-            await ActivateAsync(args);
-            base.OnFileActivated(args);
-        }
-
-        protected override async void OnActivated(IActivatedEventArgs args)
-        {
-            await ActivateAsync(args);
-            base.OnActivated(args);
+            var appArgs = Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs();
+            await ActivateAsync(appArgs.Data as IActivatedEventArgs);
         }
 
         private async Task ActivateAsync(IActivatedEventArgs e)
         {
             bool rootFrameCreated = false;
 
-            if (!(Window.Current.Content is Frame rootFrame))
+            if (MainWindow == null)
+            {
+                MainWindow = new Window();
+                MainWindow.Title = ApplicationName;
+            }
+
+            if (!(MainWindow.Content is Frame rootFrame))
             {
                 rootFrame = CreateRootFrame(e);
-                Window.Current.Content = rootFrame;
+                MainWindow.Content = rootFrame;
                 rootFrameCreated = true;
 
                 ThemeSettingsService.Initialize();
@@ -103,8 +93,8 @@ namespace Notepads
 
             var appLaunchSettings = new Dictionary<string, string>()
             {
-                { "OSArchitecture", SystemInformation.Instance.OperatingSystemArchitecture.ToString() },
-                { "OSVersion", $"{SystemInformation.Instance.OperatingSystemVersion.Major}.{SystemInformation.Instance.OperatingSystemVersion.Minor}.{SystemInformation.Instance.OperatingSystemVersion.Build}" },
+                { "OSArchitecture", System.Runtime.InteropServices.RuntimeInformation.OSArchitecture.ToString() },
+                { "OSVersion", $"{Environment.OSVersion.Version.Major}.{Environment.OSVersion.Version.Minor}.{Environment.OSVersion.Version.Build}" },
                 { "UseWindowsTheme", ThemeSettingsService.UseWindowsTheme.ToString() },
                 { "ThemeMode", ThemeSettingsService.ThemeMode.ToString() },
                 { "UseWindowsAccentColor", ThemeSettingsService.UseWindowsAccentColor.ToString() },
@@ -156,23 +146,12 @@ namespace Notepads
                 throw;
             }
 
-            try
-            {
-                if (Windows.Foundation.Metadata.ApiInformation.IsMethodPresent("Windows.ApplicationModel.Core.CoreApplication", "EnablePrelaunch"))
-                {
-                    // Only enable prelaunch when AlwaysOpenNewWindow is set to false
-                    CoreApplication.EnablePrelaunch(!AppSettingsService.AlwaysOpenNewWindow);
-                }
-            }
-            catch (Exception)
-            {
-                // Best efforts
-            }
+
 
             if (rootFrameCreated)
             {
                 ExtendViewIntoTitleBar();
-                Window.Current.Activate();
+                MainWindow.Activate();
             }
         }
 
@@ -180,8 +159,7 @@ namespace Notepads
         {
             Frame rootFrame = new Frame();
 
-            var flowDirectionSetting = ResourceContext.GetForCurrentView().QualifierValues["LayoutDirection"];
-            if (flowDirectionSetting == "RTL" || flowDirectionSetting == "TTBRTL")
+            if (System.Globalization.CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft)
             {
                 rootFrame.FlowDirection = FlowDirection.RightToLeft;
             }
@@ -244,19 +222,28 @@ namespace Notepads
         }
 
         // Occurs when an exception is not handled on the UI thread.
-        private static void OnUnhandledException(object sender, Windows.UI.Xaml.UnhandledExceptionEventArgs e)
+        private static void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
+            try
+            {
+                var appDataPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Notepads");
+                if (!System.IO.Directory.Exists(appDataPath)) System.IO.Directory.CreateDirectory(appDataPath);
+                var crashLogPath = System.IO.Path.Combine(appDataPath, "crash.txt");
+                System.IO.File.WriteAllText(crashLogPath, $"[{DateTime.UtcNow}] OnUnhandledException:\r\nMessage: {e.Message}\r\nException: {e.Exception}\r\nStack Trace:\r\n{e.Exception?.StackTrace}");
+            }
+            catch { }
+
             LoggingService.LogError($"[{nameof(App)}] OnUnhandledException: {e.Exception}");
 
             var diagnosticInfo = new Dictionary<string, string>()
             {
                 { "Message", e.Message },
                 { "Exception", e.Exception?.ToString() },
-                { "Culture", SystemInformation.Instance.Culture.EnglishName },
-                { "AvailableMemory", SystemInformation.Instance.AvailableMemory.ToString("F0") },
-                { "FirstUseTimeUTC", SystemInformation.Instance.FirstUseTime.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss") },
-                { "OSArchitecture", SystemInformation.Instance.OperatingSystemArchitecture.ToString() },
-                { "OSVersion", SystemInformation.Instance.OperatingSystemVersion.ToString() },
+                { "Culture", System.Globalization.CultureInfo.CurrentCulture.EnglishName },
+                { "AvailableMemory", "0" },
+                { "FirstUseTimeUTC", DateTime.UtcNow.ToString("MM/dd/yyyy HH:mm:ss") },
+                { "OSArchitecture", System.Runtime.InteropServices.RuntimeInformation.OSArchitecture.ToString() },
+                { "OSVersion", Environment.OSVersion.Version.ToString() },
                 { "IsShadowWindow", (!IsPrimaryInstance && !IsGameBarWidget).ToString() },
                 { "IsGameBarWidget", IsGameBarWidget.ToString() }
             };
@@ -265,7 +252,7 @@ namespace Notepads
             AnalyticsService.TrackError(e.Exception, diagnosticInfo);
 
             // suppress and handle it manually.
-            e.Handled = true;
+            e.Handled = false;
         }
 
         // Occurs when an exception is not handled on a background thread.
@@ -291,12 +278,9 @@ namespace Notepads
 
         private static void ExtendViewIntoTitleBar()
         {
-            if (!IsGameBarWidget)
+            if (!IsGameBarWidget && MainWindow != null)
             {
-                CoreApplication.GetCurrentView().TitleBar.ExtendViewIntoTitleBar = true;
-                ApplicationViewTitleBar titleBar = ApplicationView.GetForCurrentView().TitleBar;
-                titleBar.ButtonBackgroundColor = Colors.Transparent;
-                titleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+                MainWindow.ExtendsContentIntoTitleBar = true;
             }
         }
 

@@ -6,8 +6,8 @@
 namespace Notepads.Controls
 {
     using Windows.UI.Core;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Media;
 
     /// <summary>
     /// Represents the control that redistributes space between columns or rows of a Grid control.

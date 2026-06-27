@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -7,8 +7,8 @@ namespace Notepads.Views.MainPage
 {
     using Windows.UI;
     using Windows.UI.ViewManagement;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Media;
     using Notepads.Extensions;
     using Notepads.Services;
 
@@ -16,7 +16,7 @@ namespace Notepads.Views.MainPage
     {
         private void InitializeThemeSettings()
         {
-            ThemeSettingsService.SetRequestedTheme(RootGrid, Window.Current.Content, ApplicationView.GetForCurrentView().TitleBar);
+            ThemeSettingsService.SetRequestedTheme(RootGrid, App.MainWindow.Content, App.MainWindow.AppWindow.TitleBar);
             ThemeSettingsService.OnBackgroundChanged += ThemeSettingsService_OnBackgroundChanged;
             ThemeSettingsService.OnThemeChanged += ThemeSettingsService_OnThemeChanged;
             ThemeSettingsService.OnAccentColorChanged += ThemeSettingsService_OnAccentColorChanged;
@@ -31,7 +31,7 @@ namespace Notepads.Views.MainPage
         {
             await Dispatcher.CallOnUIThreadAsync(() =>
             {
-                ThemeSettingsService.SetRequestedTheme(RootGrid, Window.Current.Content, ApplicationView.GetForCurrentView().TitleBar);
+                ThemeSettingsService.SetRequestedTheme(RootGrid, App.MainWindow.Content, App.MainWindow.AppWindow.TitleBar);
             });
         }
 

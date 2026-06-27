@@ -6,8 +6,8 @@ namespace Notepads.Controls
 {
     using System.Reflection;
     using Windows.Foundation.Collections;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls.Primitives;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls.Primitives;
 
     /// <summary>
     /// SetsView methods related to tracking Items and ItemsSource changes.

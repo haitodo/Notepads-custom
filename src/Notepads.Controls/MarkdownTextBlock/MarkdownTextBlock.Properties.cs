@@ -9,10 +9,15 @@ namespace Notepads.Controls
     using System.Collections.Generic;
     using ColorCode.Styling;
     using Windows.Foundation.Metadata;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
+    using Microsoft.UI.Text;
     using Windows.UI.Text;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Media;
     using Notepads.Controls.Markdown;
 
     /// <summary>

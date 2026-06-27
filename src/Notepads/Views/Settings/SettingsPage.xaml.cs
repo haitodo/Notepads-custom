@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -9,9 +9,9 @@ namespace Notepads.Views.Settings
     using Notepads.Services;
     using System.Linq;
     using Windows.UI;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Navigation;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Navigation;
 
     public sealed partial class SettingsPage : Page
     {
@@ -23,7 +23,7 @@ namespace Notepads.Views.Settings
 
             if (App.IsGameBarWidget)
             {
-                ThemeSettingsService.SetRequestedTheme(null, Window.Current.Content, null);
+                ThemeSettingsService.SetRequestedTheme(null, App.MainWindow.Content, null);
             }
         }
 
@@ -55,7 +55,7 @@ namespace Notepads.Views.Settings
         {
             await Dispatcher.CallOnUIThreadAsync(() =>
             {
-                ThemeSettingsService.SetRequestedTheme(null, Window.Current.Content, null);
+                ThemeSettingsService.SetRequestedTheme(null, App.MainWindow.Content, null);
             });
         }
 

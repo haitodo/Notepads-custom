@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ namespace Notepads.Utilities
         private const Int32 ERROR_UNABLE_TO_REMOVE_REPLACED = unchecked((Int32)0x80070497);
         private const Int32 ERROR_FAIL = unchecked((Int32)0x80004005);
 
-        private static readonly ResourceLoader ResourceLoader = ResourceLoader.GetForCurrentView();
+        private static readonly ResourceLoader ResourceLoader = new ResourceLoader();
 
         private const string WslRootPath = "\\\\wsl$\\";
 
@@ -725,9 +725,20 @@ namespace Notepads.Utilities
             }
         }
 
+        public static async Task<StorageFolder> GetLocalFolderAsync()
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string appDataPath = Path.Combine(localAppData, "Notepads");
+            if (!Directory.Exists(appDataPath))
+            {
+                Directory.CreateDirectory(appDataPath);
+            }
+            return await StorageFolder.GetFolderFromPathAsync(appDataPath);
+        }
+
         public static async Task<StorageFolder> GetOrCreateAppFolderAsync(string folderName)
         {
-            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder localFolder = await GetLocalFolderAsync();
             return await localFolder.CreateFolderAsync(folderName, CreationCollisionOption.OpenIfExists);
         }
 

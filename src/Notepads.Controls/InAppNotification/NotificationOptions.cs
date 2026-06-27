@@ -5,7 +5,7 @@
 
 namespace Notepads.Controls
 {
-    using Windows.UI.Xaml;
+    using Microsoft.UI.Xaml;
 
     /// <summary>
     /// Base class that contains options of notification

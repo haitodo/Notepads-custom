@@ -1,21 +1,22 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
 
 namespace Notepads.Services
 {
+    using Microsoft.UI;
     using System;
-    using Microsoft.Toolkit.Uwp.Helpers;
+    using CommunityToolkit.WinUI.Helpers;
     using Notepads.Brushes;
     using Notepads.Controls.Helpers;
     using Notepads.Settings;
     using Notepads.Utilities;
     using Windows.UI;
     using Windows.UI.ViewManagement;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Controls;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Media;
 
     public static class ThemeSettingsService
     {
@@ -25,8 +26,8 @@ namespace Notepads.Services
 
         public static ElementTheme ThemeMode { get; set; }
 
-        private static readonly UISettings UISettings = new UISettings();
-        private static readonly ThemeListener ThemeListener = new ThemeListener();
+        private static UISettings UISettings;
+        private static ThemeListener ThemeListener;
         private static Brush _currentAppBackgroundBrush;
 
         private static bool _useWindowsTheme;
@@ -109,6 +110,9 @@ namespace Notepads.Services
 
         public static void Initialize()
         {
+            if (UISettings == null) UISettings = new UISettings();
+            if (ThemeListener == null) ThemeListener = new ThemeListener();
+
             InitializeThemeMode();
 
             InitializeAppAccentColor();
@@ -219,7 +223,7 @@ namespace Notepads.Services
             }
         }
 
-        public static void SetRequestedTheme(Panel backgroundPanel, UIElement currentContent, ApplicationViewTitleBar titleBar)
+        public static void SetRequestedTheme(Panel backgroundPanel, UIElement currentContent, Microsoft.UI.Windowing.AppWindowTitleBar titleBar)
         {
             // Set requested theme for app background
             if (backgroundPanel != null)
@@ -277,7 +281,7 @@ namespace Notepads.Services
             var baseColor = theme == ElementTheme.Light ? lightModeBaseColor : darkModeBaseColor;
 
             if (AppBackgroundPanelTintOpacity > 0.99f ||
-                !Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Windows.UI.Xaml.Media.AcrylicBrush") ||
+                !Windows.Foundation.Metadata.ApiInformation.IsTypePresent("Microsoft.UI.Xaml.Media.AcrylicBrush") ||
                 App.IsGameBarWidget)
             {
                 return new SolidColorBrush(baseColor);
@@ -294,41 +298,41 @@ namespace Notepads.Services
             }
         }
 
-        public static void ApplyThemeForTitleBarButtons(ApplicationViewTitleBar titleBar, ElementTheme theme)
+        public static void ApplyThemeForTitleBarButtons(Microsoft.UI.Windowing.AppWindowTitleBar titleBar, ElementTheme theme)
         {
             if (theme == ElementTheme.Dark)
             {
                 // Set active window colors
-                titleBar.ButtonForegroundColor = Windows.UI.Colors.White;
-                titleBar.ButtonBackgroundColor = Windows.UI.Colors.Transparent;
-                titleBar.ButtonHoverForegroundColor = Windows.UI.Colors.White;
+                titleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
+                titleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
+                titleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
                 titleBar.ButtonHoverBackgroundColor = Color.FromArgb(255, 90, 90, 90);
-                titleBar.ButtonPressedForegroundColor = Windows.UI.Colors.White;
+                titleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
                 titleBar.ButtonPressedBackgroundColor = Color.FromArgb(255, 120, 120, 120);
 
                 // Set inactive window colors
-                titleBar.InactiveForegroundColor = Windows.UI.Colors.Gray;
-                titleBar.InactiveBackgroundColor = Windows.UI.Colors.Transparent;
-                titleBar.ButtonInactiveForegroundColor = Windows.UI.Colors.Gray;
-                titleBar.ButtonInactiveBackgroundColor = Windows.UI.Colors.Transparent;
+                titleBar.InactiveForegroundColor = Microsoft.UI.Colors.Gray;
+                titleBar.InactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
+                titleBar.ButtonInactiveForegroundColor = Microsoft.UI.Colors.Gray;
+                titleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
 
                 titleBar.BackgroundColor = Color.FromArgb(255, 45, 45, 45);
             }
             else if (theme == ElementTheme.Light)
             {
                 // Set active window colors
-                titleBar.ButtonForegroundColor = Windows.UI.Colors.Black;
-                titleBar.ButtonBackgroundColor = Windows.UI.Colors.Transparent;
-                titleBar.ButtonHoverForegroundColor = Windows.UI.Colors.Black;
+                titleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
+                titleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
+                titleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
                 titleBar.ButtonHoverBackgroundColor = Color.FromArgb(255, 180, 180, 180);
-                titleBar.ButtonPressedForegroundColor = Windows.UI.Colors.Black;
+                titleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Black;
                 titleBar.ButtonPressedBackgroundColor = Color.FromArgb(255, 150, 150, 150);
 
                 // Set inactive window colors
-                titleBar.InactiveForegroundColor = Windows.UI.Colors.DimGray;
-                titleBar.InactiveBackgroundColor = Windows.UI.Colors.Transparent;
-                titleBar.ButtonInactiveForegroundColor = Windows.UI.Colors.DimGray;
-                titleBar.ButtonInactiveBackgroundColor = Windows.UI.Colors.Transparent;
+                titleBar.InactiveForegroundColor = Microsoft.UI.Colors.DimGray;
+                titleBar.InactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
+                titleBar.ButtonInactiveForegroundColor = Microsoft.UI.Colors.DimGray;
+                titleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
 
                 titleBar.BackgroundColor = Color.FromArgb(255, 210, 210, 210);
             }
@@ -374,15 +378,6 @@ namespace Notepads.Services
                 }
             }
 
-            try
-            {
-                // Overwrite MenuFlyoutSubItemRevealBackgroundSubMenuOpened resource color
-                ((RevealBackgroundBrush)Application.Current.Resources["SystemControlHighlightAccent3RevealBackgroundBrush"]).Color = color;
-            }
-            catch (Exception)
-            {
-                // ignore
-            }
         }
     }
 }

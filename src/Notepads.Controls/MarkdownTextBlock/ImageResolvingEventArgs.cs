@@ -10,7 +10,7 @@ namespace Notepads.Controls
     using System.Linq;
     using System.Threading.Tasks;
     using Windows.Foundation;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml.Media;
 
     /// <summary>
     /// Arguments for the <see cref="MarkdownTextBlock.ImageResolving"/> event which is called when a url needs to be resolved to a <see cref="ImageSource"/>.

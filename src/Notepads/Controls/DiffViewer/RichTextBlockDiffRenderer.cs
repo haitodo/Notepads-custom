@@ -1,10 +1,11 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
 
 namespace Notepads.Controls.DiffViewer
 {
+    using Microsoft.UI;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -12,9 +13,9 @@ namespace Notepads.Controls.DiffViewer
     using DiffPlex.DiffBuilder;
     using DiffPlex.DiffBuilder.Model;
     using Windows.UI;
-    using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Documents;
-    using Windows.UI.Xaml.Media;
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Documents;
+    using Microsoft.UI.Xaml.Media;
 
     public sealed class RichTextBlockDiffRenderer
     {
