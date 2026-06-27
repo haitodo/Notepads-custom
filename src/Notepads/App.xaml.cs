@@ -22,6 +22,8 @@ namespace Notepads
     using Windows.ApplicationModel.Resources.Core;
     using Windows.UI;
     using Windows.UI.ViewManagement;
+    using Microsoft.UI.Windowing;
+    using Windows.Graphics;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Controls;
     using Microsoft.UI.Xaml.Navigation;
@@ -37,6 +39,26 @@ namespace Notepads
         public static bool IsGameBarWidget = false;
 
         public static Mutex InstanceHandlerMutex { get; set; }
+
+        private static bool? _isPackaged;
+        public static bool IsPackaged
+        {
+            get
+            {
+                if (_isPackaged == null)
+                {
+                    try
+                    {
+                        _isPackaged = Package.Current != null;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        _isPackaged = false;
+                    }
+                }
+                return _isPackaged.Value;
+            }
+        }
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -61,6 +83,21 @@ namespace Notepads
             LoggingService.LogInfo($"[{nameof(App)}] Started: Instance = {InstanceId} IsPrimaryInstance: {IsPrimaryInstance} IsGameBarWidget: {IsGameBarWidget}.");
 
             ApplicationSettingsStore.Write(SettingsKey.ActiveInstanceIdStr, App.InstanceId.ToString());
+
+            if (!IsPackaged)
+            {
+                if (ApplicationSettingsStore.Read(SettingsKey.AppLanguageStr) is string appLanguage)
+                {
+                    try
+                    {
+                        Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = appLanguage;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to set language override: {ex}");
+                    }
+                }
+            }
 
             InitializeComponent();
         }
@@ -151,6 +188,7 @@ namespace Notepads
             if (rootFrameCreated)
             {
                 ExtendViewIntoTitleBar();
+                RestoreWindowPositionAndSize(MainWindow.AppWindow);
                 MainWindow.Activate();
             }
         }
@@ -281,6 +319,50 @@ namespace Notepads
             if (!IsGameBarWidget && MainWindow != null)
             {
                 MainWindow.ExtendsContentIntoTitleBar = true;
+            }
+        }
+
+        private void RestoreWindowPositionAndSize(AppWindow appWindow)
+        {
+            try
+            {
+                if (ApplicationSettingsStore.Read(SettingsKey.WindowWidthInt) is int width &&
+                    ApplicationSettingsStore.Read(SettingsKey.WindowHeightInt) is int height)
+                {
+                    SizeInt32 size = new SizeInt32 { Width = width, Height = height };
+                    if (ApplicationSettingsStore.Read(SettingsKey.WindowPositionXInt) is int x &&
+                        ApplicationSettingsStore.Read(SettingsKey.WindowPositionYInt) is int y)
+                    {
+                        RectInt32 rect = new RectInt32 { X = x, Y = y, Width = width, Height = height };
+                        DisplayArea displayArea = DisplayArea.GetFromRect(rect, DisplayAreaFallback.None);
+                        if (displayArea != null)
+                        {
+                            // モニターを跨ぐ移動時のDPI自動スケーリングによるサイズ異常を防ぐため、先に移動してからサイズを設定する
+                            appWindow.Move(new PointInt32 { X = x, Y = y });
+                            appWindow.Resize(size);
+                        }
+                        else
+                        {
+                            appWindow.Resize(size);
+                        }
+                    }
+                    else
+                    {
+                        appWindow.Resize(size);
+                    }
+                }
+
+                if (ApplicationSettingsStore.Read(SettingsKey.WindowIsMaximizedBool) is bool isMaximized && isMaximized)
+                {
+                    if (appWindow.Presenter is OverlappedPresenter presenter)
+                    {
+                        presenter.Maximize();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"[{nameof(App)}] Failed to restore window position and size: {ex.Message}");
             }
         }
 

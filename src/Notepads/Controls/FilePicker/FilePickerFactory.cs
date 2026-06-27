@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -46,6 +46,12 @@ namespace Notepads.Controls.FilePicker
                 SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary
             };
 
+            if (App.MainWindow != null)
+            {
+                IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(fileOpenPicker, hwnd);
+            }
+
             fileOpenPicker.FileTypeFilter.Add("*"); // All files
 
             foreach (var extension in AllSupportedExtensions)
@@ -62,6 +68,12 @@ namespace Notepads.Controls.FilePicker
             {
                 SuggestedStartLocation = PickerLocationId.DocumentsLibrary
             };
+
+            if (App.MainWindow != null)
+            {
+                IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(savePicker, hwnd);
+            }
 
             var fileName = textEditor.EditingFileName ?? textEditor.FileNamePlaceholder;
             var extension = FileTypeUtility.GetFileExtension(fileName).ToLower();

@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -30,18 +30,24 @@ namespace Notepads.Views.MainPage
             }
             catch (Exception ex)
             {
-                var fileOpenErrorDialog = new FileOpenErrorDialog(filePath: null, ex.Message);
-                await DialogManager.OpenDialogAsync(fileOpenErrorDialog, awaitPreviousDialog: false);
-                if (!fileOpenErrorDialog.IsAborted)
+                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
                 {
-                    NotepadsCore.FocusOnSelectedTextEditor();
-                }
+                    var fileOpenErrorDialog = new FileOpenErrorDialog(filePath: null, ex.Message);
+                    await DialogManager.OpenDialogAsync(fileOpenErrorDialog, awaitPreviousDialog: false);
+                    if (!fileOpenErrorDialog.IsAborted)
+                    {
+                        NotepadsCore.FocusOnSelectedTextEditor();
+                    }
+                });
                 return;
             }
 
             if (files == null || files.Count == 0)
             {
-                NotepadsCore.FocusOnSelectedTextEditor();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    NotepadsCore.FocusOnSelectedTextEditor();
+                });
                 return;
             }
 
@@ -53,41 +59,47 @@ namespace Notepads.Views.MainPage
 
         public async Task<bool> OpenFileAsync(StorageFile file, bool rebuildOpenRecentItems = true)
         {
-            try
+            if (file == null) return false;
+
+            var tcs = new TaskCompletionSource<bool>();
+            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
             {
-                if (file == null) return false;
-                var openedEditor = NotepadsCore.GetTextEditor(file);
-                if (openedEditor != null)
+                try
                 {
-                    NotepadsCore.SwitchTo(openedEditor);
-                    NotificationCenter.Instance.PostNotification(
-                        _resourceLoader.GetString("TextEditor_NotificationMsg_FileAlreadyOpened"), 2500);
-                    return false;
-                }
+                    var openedEditor = NotepadsCore.GetTextEditor(file);
+                    if (openedEditor != null)
+                    {
+                        NotepadsCore.SwitchTo(openedEditor);
+                        NotificationCenter.Instance.PostNotification(
+                            _resourceLoader.GetString("TextEditor_NotificationMsg_FileAlreadyOpened"), 2500);
+                        tcs.SetResult(false);
+                        return;
+                    }
 
-                var editor = await NotepadsCore.CreateTextEditorAsync(Guid.NewGuid(), file);
-                NotepadsCore.OpenTextEditor(editor);
-                NotepadsCore.FocusOnSelectedTextEditor();
-                var success = MRUService.TryAdd(file); // Remember recently used files
-                if (success && rebuildOpenRecentItems)
-                {
-                    await BuildOpenRecentButtonSubItemsAsync();
-                }
-
-                TrackFileExtensionIfNotSupported(file);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                var fileOpenErrorDialog = new FileOpenErrorDialog(file.Path, ex.Message);
-                await DialogManager.OpenDialogAsync(fileOpenErrorDialog, awaitPreviousDialog: false);
-                if (!fileOpenErrorDialog.IsAborted)
-                {
+                    var editor = await NotepadsCore.CreateTextEditorAsync(Guid.NewGuid(), file);
+                    NotepadsCore.OpenTextEditor(editor);
                     NotepadsCore.FocusOnSelectedTextEditor();
+                    var success = MRUService.TryAdd(file); // Remember recently used files
+                    if (success && rebuildOpenRecentItems)
+                    {
+                        await BuildOpenRecentButtonSubItemsAsync();
+                    }
+
+                    TrackFileExtensionIfNotSupported(file);
+                    tcs.SetResult(true);
                 }
-                return false;
-            }
+                catch (Exception ex)
+                {
+                    var fileOpenErrorDialog = new FileOpenErrorDialog(file.Path, ex.Message);
+                    await DialogManager.OpenDialogAsync(fileOpenErrorDialog, awaitPreviousDialog: false);
+                    if (!fileOpenErrorDialog.IsAborted)
+                    {
+                        NotepadsCore.FocusOnSelectedTextEditor();
+                    }
+                    tcs.SetResult(false);
+                }
+            });
+            return await tcs.Task;
         }
 
         // Here we track the file extension opened by user but not supported by Notepads.
@@ -140,20 +152,47 @@ namespace Notepads.Views.MainPage
 
         private async Task<StorageFile> OpenFileUsingFileSavePickerAsync(ITextEditor textEditor)
         {
-            NotepadsCore.SwitchTo(textEditor);
-            StorageFile file = await FilePickerFactory.GetFileSavePicker(textEditor).PickSaveFileAsync();
-            NotepadsCore.FocusOnTextEditor(textEditor);
-            return file;
+            // WinUI 3 Desktop では PickSaveFileAsync() は UI スレッドから呼ぶ必要がある
+            var tcs = new TaskCompletionSource<StorageFile>();
+            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    NotepadsCore.SwitchTo(textEditor);
+                    StorageFile file = await FilePickerFactory.GetFileSavePicker(textEditor).PickSaveFileAsync();
+                    NotepadsCore.FocusOnTextEditor(textEditor);
+                    tcs.SetResult(file);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+            return await tcs.Task;
         }
 
         private async Task SaveInternalAsync(ITextEditor textEditor, StorageFile file, bool rebuildOpenRecentItems)
         {
             await NotepadsCore.SaveContentToFileAndUpdateEditorStateAsync(textEditor, file);
-            var success = MRUService.TryAdd(file); // Remember recently used files
-            if (success && rebuildOpenRecentItems)
+            
+            var tcs = new TaskCompletionSource<bool>();
+            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
             {
-                await BuildOpenRecentButtonSubItemsAsync();
-            }
+                try
+                {
+                    var success = MRUService.TryAdd(file); // Remember recently used files
+                    if (success && rebuildOpenRecentItems)
+                    {
+                        await BuildOpenRecentButtonSubItemsAsync();
+                    }
+                    tcs.SetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+            await tcs.Task;
         }
 
         private async Task<bool> SaveAsync(ITextEditor textEditor, bool saveAs, bool ignoreUnmodifiedDocument = false, bool rebuildOpenRecentItems = true)
@@ -172,7 +211,7 @@ namespace Notepads.Views.MainPage
                 if (textEditor.EditingFile == null || saveAs)
                 {
                     file = await OpenFileUsingFileSavePickerAsync(textEditor);
-                    if (file == null) return false; // User cancelled
+                    if (file == null) return false; // ユーザーがキャンセル
                 }
                 else
                 {
@@ -184,11 +223,11 @@ namespace Notepads.Views.MainPage
                 {
                     await SaveInternalAsync(textEditor, file, rebuildOpenRecentItems);
                 }
-                catch (UnauthorizedAccessException) // Happens when the file we are saving is read-only
+                catch (UnauthorizedAccessException) // 読み取り専用ファイルを保存しようとした場合
                 {
                     promptSaveAs = true;
                 }
-                catch (FileNotFoundException) // Happens when the file not found or storage media is removed
+                catch (FileNotFoundException) // ファイルが見つからない、またはストレージメディアが除去された場合
                 {
                     promptSaveAs = true;
                 }
@@ -196,7 +235,7 @@ namespace Notepads.Views.MainPage
                 if (promptSaveAs)
                 {
                     file = await OpenFileUsingFileSavePickerAsync(textEditor);
-                    if (file == null) return false; // User cancelled
+                    if (file == null) return false; // ユーザーがキャンセル
 
                     await SaveInternalAsync(textEditor, file, rebuildOpenRecentItems);
                     return true;
@@ -206,12 +245,16 @@ namespace Notepads.Views.MainPage
             }
             catch (Exception ex)
             {
-                var fileSaveErrorDialog = new FileSaveErrorDialog((file == null) ? string.Empty : file.Path, ex.Message);
-                await DialogManager.OpenDialogAsync(fileSaveErrorDialog, awaitPreviousDialog: false);
-                if (!fileSaveErrorDialog.IsAborted)
+                // エラーダイアログを UI スレッドで表示（fire-and-forget）
+                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
                 {
-                    NotepadsCore.FocusOnSelectedTextEditor();
-                }
+                    var fileSaveErrorDialog = new FileSaveErrorDialog((file == null) ? string.Empty : file.Path, ex.Message);
+                    await DialogManager.OpenDialogAsync(fileSaveErrorDialog, awaitPreviousDialog: false);
+                    if (!fileSaveErrorDialog.IsAborted)
+                    {
+                        NotepadsCore.FocusOnSelectedTextEditor();
+                    }
+                });
                 return false;
             }
         }

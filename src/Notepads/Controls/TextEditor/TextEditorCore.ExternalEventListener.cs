@@ -113,7 +113,7 @@ namespace Notepads.Controls.TextEditor
             await Dispatcher.CallOnUIThreadAsync(() =>
             {
                 SelectionHighlightColor = new SolidColorBrush(color);
-                SelectionHighlightColorWhenNotFocused = new SolidColorBrush(color);
+                SelectionHighlightColorWhenNotFocused = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
             });
         }
     }

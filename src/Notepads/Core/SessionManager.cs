@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -127,8 +127,11 @@ namespace Notepads.Core
                 }
             }
 
-            _notepadsCore.OpenTextEditors(recoveredEditor.ToArray(), sessionData.SelectedTextEditor);
-            _notepadsCore.SetTabScrollViewerHorizontalOffset(sessionData.TabScrollViewerHorizontalOffset);
+            await ThreadUtility.RunOnUIThreadAsync(() =>
+            {
+                _notepadsCore.OpenTextEditors(recoveredEditor.ToArray(), sessionData.SelectedTextEditor);
+                _notepadsCore.SetTabScrollViewerHorizontalOffset(sessionData.TabScrollViewerHorizontalOffset);
+            });
 
             _loaded = true;
 
@@ -456,7 +459,7 @@ namespace Notepads.Core
             {
                 var encoding = EncodingUtility.GetEncodingByName(editorSessionData.StateMetaData.LastSavedEncoding);
                 textEditor = await _notepadsCore.CreateTextEditorAsync(editorSessionData.Id, editingFile, encoding: encoding, ignoreFileSizeLimit: true);
-                textEditor.ResetEditorState(editorSessionData.StateMetaData);
+                await ThreadUtility.RunOnUIThreadAsync(() => textEditor.ResetEditorState(editorSessionData.StateMetaData));
             }
             else // File with pending changes
             {
@@ -470,18 +473,6 @@ namespace Notepads.Core
                     lastSavedText = lastSavedTextFile.Content;
                 }
 
-                var textFile = new TextFile(lastSavedText,
-                    EncodingUtility.GetEncodingByName(editorSessionData.StateMetaData.LastSavedEncoding),
-                    LineEndingUtility.GetLineEndingByName(editorSessionData.StateMetaData.LastSavedLineEnding),
-                    editorSessionData.StateMetaData.DateModifiedFileTime);
-
-                textEditor = _notepadsCore.CreateTextEditor(
-                    editorSessionData.Id,
-                    textFile,
-                    editingFile,
-                    editorSessionData.StateMetaData.FileNamePlaceholder,
-                    editorSessionData.StateMetaData.IsModified);
-
                 if (pendingFile != null)
                 {
                     TextFile pendingTextFile = await FileSystemUtility.ReadFileAsync(pendingFile,
@@ -490,7 +481,22 @@ namespace Notepads.Core
                     pendingText = pendingTextFile.Content;
                 }
 
-                textEditor.ResetEditorState(editorSessionData.StateMetaData, pendingText);
+                var textFile = new TextFile(lastSavedText,
+                    EncodingUtility.GetEncodingByName(editorSessionData.StateMetaData.LastSavedEncoding),
+                    LineEndingUtility.GetLineEndingByName(editorSessionData.StateMetaData.LastSavedLineEnding),
+                    editorSessionData.StateMetaData.DateModifiedFileTime);
+
+                textEditor = await ThreadUtility.RunOnUIThreadAsync(() =>
+                {
+                    var editor = _notepadsCore.CreateTextEditor(
+                        editorSessionData.Id,
+                        textFile,
+                        editingFile,
+                        editorSessionData.StateMetaData.FileNamePlaceholder,
+                        editorSessionData.StateMetaData.IsModified);
+                    editor.ResetEditorState(editorSessionData.StateMetaData, pendingText);
+                    return editor;
+                });
             }
 
             return textEditor;

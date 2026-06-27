@@ -69,6 +69,11 @@ namespace Notepads.Utilities
 
             ActiveDialog = dialog;
 
+            if (ActiveDialog.XamlRoot == null && App.MainWindow != null && App.MainWindow.Content != null)
+            {
+                ActiveDialog.XamlRoot = App.MainWindow.Content.XamlRoot;
+            }
+
             try
             {
                 return await ActiveDialog.ShowAsync();

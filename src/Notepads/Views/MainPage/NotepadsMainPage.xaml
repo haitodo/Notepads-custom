@@ -231,7 +231,7 @@
                         </controls:SetsView.SetsPaddingHeader>
 
                         <controls:SetsView.SetsEndHeader>
-                            <Grid x:Name="TitleBarReservedArea" Background="Transparent" HorizontalAlignment="Center" Width="180" Height="32"/>
+                            <Grid x:Name="TitleBarReservedArea" Background="Transparent" IsHitTestVisible="False" HorizontalAlignment="Center" Width="180" Height="32"/>
                         </controls:SetsView.SetsEndHeader>
 
                     </controls:SetsView>

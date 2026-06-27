@@ -123,7 +123,19 @@ namespace Notepads.Views.MainPage
 
             if (App.MainWindow != null)
             {
-                App.MainWindow.AppWindow.Closing += AppWindow_Closing;
+                var appWindow = App.MainWindow.AppWindow;
+                appWindow.Closing += AppWindow_Closing;
+                appWindow.Changed += AppWindow_Changed;
+
+                if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+                {
+                    _lastIsMaximized = presenter.State == Microsoft.UI.Windowing.OverlappedPresenterState.Maximized;
+                }
+
+                _lastNormalWidth = ApplicationSettingsStore.Read(SettingsKey.WindowWidthInt) is int w ? w : appWindow.Size.Width;
+                _lastNormalHeight = ApplicationSettingsStore.Read(SettingsKey.WindowHeightInt) is int h ? h : appWindow.Size.Height;
+                _lastNormalX = ApplicationSettingsStore.Read(SettingsKey.WindowPositionXInt) is int x ? x : appWindow.Position.X;
+                _lastNormalY = ApplicationSettingsStore.Read(SettingsKey.WindowPositionYInt) is int y ? y : appWindow.Position.Y;
             }
 
             if (App.IsGameBarWidget)
@@ -262,6 +274,9 @@ namespace Notepads.Views.MainPage
                 }
             }
 
+            // Ensure we resume on the UI thread
+            await ThreadUtility.RunOnUIThreadAsync(() => {});
+
             if (_appLaunchFiles != null && _appLaunchFiles.Count > 0)
             {
                 loadedCount += await OpenFilesAsync(_appLaunchFiles);
@@ -369,22 +384,106 @@ namespace Notepads.Views.MainPage
         }
 
         private bool _isClosingFromAppWindow = false;
+        private bool _isClosingInProgress = false;
+
+        private int _lastNormalWidth = 1000;
+        private int _lastNormalHeight = 700;
+        private int _lastNormalX = -1;
+        private int _lastNormalY = -1;
+        private bool _lastIsMaximized = false;
+
+        private void CloseMainWindow()
+        {
+            SaveWindowPositionAndSize();
+            if (App.MainWindow == null)
+            {
+                Application.Current.Exit();
+                return;
+            }
+
+            try
+            {
+                bool enqueued = App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        App.MainWindow.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggingService.LogError($"[{nameof(NotepadsMainPage)}] Failed to close App.MainWindow inside DispatcherQueue: {ex.Message}");
+                        Application.Current.Exit();
+                    }
+                });
+
+                if (!enqueued)
+                {
+                    LoggingService.LogWarning($"[{nameof(NotepadsMainPage)}] Failed to enqueue close command onto App.MainWindow.DispatcherQueue. Exiting application directly.");
+                    Application.Current.Exit();
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"[{nameof(NotepadsMainPage)}] Failed to enqueue close App.MainWindow: {ex.Message}");
+                Application.Current.Exit();
+            }
+        }
+
+        private void AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
+        {
+            if (sender.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+            {
+                _lastIsMaximized = presenter.State == Microsoft.UI.Windowing.OverlappedPresenterState.Maximized;
+
+                if (presenter.State == Microsoft.UI.Windowing.OverlappedPresenterState.Restored)
+                {
+                    _lastNormalWidth = sender.Size.Width;
+                    _lastNormalHeight = sender.Size.Height;
+                    _lastNormalX = sender.Position.X;
+                    _lastNormalY = sender.Position.Y;
+                }
+            }
+        }
+
+        private void SaveWindowPositionAndSize()
+        {
+            try
+            {
+                ApplicationSettingsStore.Write(SettingsKey.WindowWidthInt, _lastNormalWidth);
+                ApplicationSettingsStore.Write(SettingsKey.WindowHeightInt, _lastNormalHeight);
+                ApplicationSettingsStore.Write(SettingsKey.WindowPositionXInt, _lastNormalX);
+                ApplicationSettingsStore.Write(SettingsKey.WindowPositionYInt, _lastNormalY);
+                ApplicationSettingsStore.Write(SettingsKey.WindowIsMaximizedBool, _lastIsMaximized);
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"Failed to save window position and size: {ex.Message}");
+            }
+        }
 
         private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs e)
         {
             if (_isClosingFromAppWindow)
             {
+                sender.Changed -= AppWindow_Changed;
                 return;
             }
 
             e.Cancel = true;
+
+            if (_isClosingInProgress)
+            {
+                return;
+            }
+
+            _isClosingInProgress = true;
 
             if (AppSettingsService.IsSessionSnapshotEnabled)
             {
                 await SessionManager.SaveSessionAsync(() => { SessionManager.IsBackupEnabled = false; });
                 App.InstanceHandlerMutex?.Dispose();
                 _isClosingFromAppWindow = true;
-                App.MainWindow.Close();
+                CloseMainWindow();
                 return;
             }
 
@@ -392,7 +491,7 @@ namespace Notepads.Views.MainPage
             {
                 App.InstanceHandlerMutex?.Dispose();
                 _isClosingFromAppWindow = true;
-                App.MainWindow.Close();
+                CloseMainWindow();
                 return;
             }
 
@@ -416,23 +515,24 @@ namespace Notepads.Views.MainPage
                     if (count > 0)
                     {
                         await BuildOpenRecentButtonSubItemsAsync();
+                        _isClosingInProgress = false;
                     }
                     else
                     {
                         App.InstanceHandlerMutex?.Dispose();
                         _isClosingFromAppWindow = true;
-                        App.MainWindow.Close();
+                        CloseMainWindow();
                     }
                 },
                 discardAndExitAction: () =>
                 {
                     App.InstanceHandlerMutex?.Dispose();
                     _isClosingFromAppWindow = true;
-                    App.MainWindow.Close();
+                    CloseMainWindow();
                 },
                 cancelAction: () =>
                 {
-                    // Do nothing
+                    _isClosingInProgress = false;
                 });
 
             var result = await DialogManager.OpenDialogAsync(appCloseSaveReminderDialog, awaitPreviousDialog: false);
@@ -440,6 +540,7 @@ namespace Notepads.Views.MainPage
             if (result == null || appCloseSaveReminderDialog.IsAborted)
             {
                 NotepadsCore.FocusOnSelectedTextEditor();
+                _isClosingInProgress = false;
             }
         }
 

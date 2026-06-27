@@ -6,10 +6,11 @@
 namespace Notepads.Views.Settings
 {
     using Notepads.Services;
+    using Notepads.Settings;
     using Notepads.Utilities;
     using System.Collections.Generic;
     using System.Linq;
-    using Windows.Globalization;
+    using ApplicationLanguages = Microsoft.Windows.Globalization.ApplicationLanguages;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Controls;
 
@@ -106,6 +107,11 @@ namespace Notepads.Views.Settings
             RestartPrompt.Visibility = languageId == LanguageUtility.CurrentLanguageID ? Visibility.Collapsed : Visibility.Visible;
 
             ApplicationLanguages.PrimaryLanguageOverride = languageId;
+
+            if (!App.IsPackaged)
+            {
+                ApplicationSettingsStore.Write(SettingsKey.AppLanguageStr, languageId);
+            }
         }
     }
 }

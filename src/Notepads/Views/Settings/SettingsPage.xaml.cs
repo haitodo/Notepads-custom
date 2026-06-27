@@ -34,7 +34,10 @@ namespace Notepads.Views.Settings
                 ThemeSettingsService.OnThemeChanged += ThemeSettingsService_OnThemeChanged;
                 ThemeSettingsService.OnAccentColorChanged += ThemeSettingsService_OnAccentColorChanged;
             }
-            ((NavigationViewItem)SettingsNavigationView.MenuItems.First()).IsSelected = true;
+            var firstItem = (NavigationViewItem)SettingsNavigationView.MenuItems.First();
+            firstItem.IsSelected = true;
+            // WinUI3ではIsSelectedを真に設定してもItemInvokedイベントが発火しないため、初回ロード時に手動で初期画面を表示します。
+            SettingsPanel.Show(firstItem.Content as string, firstItem.Tag as string);
         }
 
         private void SettingsPage_Unloaded(object sender, RoutedEventArgs e)

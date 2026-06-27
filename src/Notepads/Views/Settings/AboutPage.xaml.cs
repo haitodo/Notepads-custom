@@ -60,8 +60,16 @@ namespace Notepads.Views.Settings
 
         private static string GetAppVersion()
         {
-            PackageVersion version = Package.Current.Id.Version;
-            return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+            if (App.IsPackaged)
+            {
+                PackageVersion version = Package.Current.Id.Version;
+                return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+            }
+            else
+            {
+                var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                return version != null ? $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}" : "1.0.0.0";
+            }
         }
     }
 }

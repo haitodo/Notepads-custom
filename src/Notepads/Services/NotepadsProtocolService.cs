@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -70,7 +70,11 @@ namespace Notepads.Services
                 else if (operation == NotepadsOperationProtocol.OpenNewInstance)
                 {
                     var uriToLaunch = $"notepads://{NewInstanceProtocolStr}";
-                    var launchOptions = new LauncherOptions { TargetApplicationPackageFamilyName = Package.Current.Id.FamilyName };
+                    var launchOptions = new LauncherOptions();
+                    if (App.IsPackaged)
+                    {
+                        launchOptions.TargetApplicationPackageFamilyName = Package.Current.Id.FamilyName;
+                    }
                     return await Launcher.LaunchUriAsync(new Uri(uriToLaunch.ToLower()), launchOptions);
                 }
                 else

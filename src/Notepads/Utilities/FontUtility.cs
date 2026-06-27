@@ -9,7 +9,7 @@ namespace Notepads.Utilities
     using System.Collections.Generic;
     using System.Linq;
     using Windows.Foundation;
-    using Windows.Globalization;
+    using ApplicationLanguages = Microsoft.Windows.Globalization.ApplicationLanguages;
     using Microsoft.UI.Text;
     using Microsoft.UI.Text;
     using Microsoft.UI.Text;

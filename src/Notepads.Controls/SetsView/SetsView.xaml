@@ -283,6 +283,7 @@
 
             <ContentPresenter Grid.Row="1"
                               Grid.Column="4"
+                              Grid.ColumnSpan="2"
                               HorizontalAlignment="Stretch"
                               Content="{TemplateBinding SetsPaddingHeader}"
                               ContentTemplate="{TemplateBinding SetsPaddingHeaderTemplate}" />

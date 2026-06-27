@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
 //  Copyright (c) 2019-2024, Jiaqi (0x7c13) Liu. All rights reserved.
 //  See LICENSE file in the project root for license information.
 // ---------------------------------------------------------------------------------------------
@@ -9,6 +9,7 @@ namespace Notepads.Settings
     {
         // App related
         internal static string AppVersionStr = "AppVersionStr";
+        internal static string AppLanguageStr = "AppLanguageStr";
         internal static string IsJumpListOutOfDateBool = "IsJumpListOutOfDateBool";
         internal static string ActiveInstanceIdStr = "ActiveInstanceIdStr";
         internal static string ExitWhenLastTabClosed = "ExitWhenLastTabClosed";
@@ -41,5 +42,12 @@ namespace Notepads.Settings
         internal static string EditorHighlightMisspelledWordsBool = "EditorHighlightMisspelledWordsBool";
         internal static string EditorDefaultDisplayLineNumbersBool = "EditorDefaultDisplayLineNumbersBool";
         internal static string EditorEnableSmartCopyBool = "EditorEnableSmartCopyBool";
+
+        // Window size and position
+        internal static string WindowWidthInt = "WindowWidthInt";
+        internal static string WindowHeightInt = "WindowHeightInt";
+        internal static string WindowPositionXInt = "WindowPositionXInt";
+        internal static string WindowPositionYInt = "WindowPositionYInt";
+        internal static string WindowIsMaximizedBool = "WindowIsMaximizedBool";
     }
 }

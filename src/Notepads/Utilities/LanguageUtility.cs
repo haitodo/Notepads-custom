@@ -9,7 +9,7 @@ namespace Notepads.Utilities
     using System.Globalization;
     using System.Linq;
     using Windows.ApplicationModel.Resources;
-    using Windows.Globalization;
+    using ApplicationLanguages = Microsoft.Windows.Globalization.ApplicationLanguages;
 
     public class LanguageItem
     {
@@ -37,8 +37,26 @@ namespace Notepads.Utilities
         public static IReadOnlyCollection<LanguageItem> GetSupportedLanguageItems()
         {
             var supportedLanguageList = new List<LanguageItem>() { new LanguageItem() { ID = string.Empty } };
-            supportedLanguageList.AddRange(ApplicationLanguages.ManifestLanguages
-                .Select(languageId => new LanguageItem() { ID = languageId }));
+
+            if (App.IsPackaged)
+            {
+                supportedLanguageList.AddRange(ApplicationLanguages.ManifestLanguages
+                    .Select(languageId => new LanguageItem() { ID = languageId }));
+            }
+            else
+            {
+                // Fallback language list for unpackaged environment
+                string[] unpackagedLanguages = new[]
+                {
+                    "ar-YE", "bg-BG", "cs-CZ", "de-CH", "de-DE", "en-US", "es-ES", "fi-FI",
+                    "fr-FR", "hi-IN", "hr-HR", "hu-HU", "it-IT", "ja-JP", "ka-GE", "ko-KR",
+                    "nl-NL", "or-IN", "pl-PL", "pt-BR", "pt-PT", "ru-RU", "sr-Latn", "sr-cyrl",
+                    "tr-TR", "uk-UA", "vi-VN", "zh-CN", "zh-TW"
+                };
+                supportedLanguageList.AddRange(unpackagedLanguages
+                    .Select(languageId => new LanguageItem() { ID = languageId }));
+            }
+
             return supportedLanguageList;
         }
     }

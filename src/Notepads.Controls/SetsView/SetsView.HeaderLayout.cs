@@ -168,21 +168,29 @@ namespace Notepads.Controls
             }
         }
 
+        private double GetMaxSetWidth(SetsViewItem set)
+        {
+            var maxWidth = set.MaxWidth;
+            return double.IsNaN(maxWidth) || double.IsInfinity(maxWidth) ? double.MaxValue : maxWidth;
+        }
+
         private double ProvideEqualWidth(SetsViewItem set, double availableWidth)
         {
+            double maxSetWidth = GetMaxSetWidth(set);
+
             if (double.IsNaN(SelectedSetWidth))
             {
                 if (Items.Count <= 1)
                 {
-                    return availableWidth;
+                    return Math.Min(maxSetWidth, availableWidth);
                 }
 
-                return Math.Max(set.MinWidth, availableWidth / Items.Count);
+                return Math.Max(set.MinWidth, Math.Min(maxSetWidth, availableWidth / Items.Count));
             }
             else if (Items.Count() <= 1)
             {
                 // Default case of a single set, make it full size.
-                return Math.Min(SelectedSetWidth, availableWidth);
+                return Math.Min(maxSetWidth, Math.Min(SelectedSetWidth, availableWidth));
             }
             else
             {
@@ -199,22 +207,26 @@ namespace Notepads.Controls
                 }
 
                 // If it's selected make it full size, otherwise whatever the size should be.
-                return set.IsSelected
+                var finalWidth = set.IsSelected
                     ? Math.Min(SelectedSetWidth, availableWidth)
                     : width;
+
+                return Math.Min(maxSetWidth, finalWidth);
             }
         }
 
         private double ProvideCompactWidth(SetsViewItem set)
         {
+            double maxSetWidth = GetMaxSetWidth(set);
+
             // If we're selected and have a value for that, then just return that.
             if (set.IsSelected && !double.IsNaN(SelectedSetWidth))
             {
-                return SelectedSetWidth;
+                return Math.Min(maxSetWidth, SelectedSetWidth);
             }
 
             // Otherwise use min size.
-            return set.MinWidth;
+            return Math.Min(maxSetWidth, set.MinWidth);
         }
     }
 }

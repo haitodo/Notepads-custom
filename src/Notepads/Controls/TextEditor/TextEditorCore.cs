@@ -16,6 +16,7 @@ namespace Notepads.Controls.TextEditor
     using Windows.Foundation;
     using Windows.System;
     using Windows.UI.Core;
+    using Microsoft.UI.Dispatching;
     using Microsoft.UI.Text;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Controls;
@@ -125,7 +126,7 @@ namespace Notepads.Controls.TextEditor
             FontStyle = AppSettingsService.EditorFontStyle;
             FontWeight = AppSettingsService.EditorFontWeight;
             SelectionHighlightColor = new SolidColorBrush(ThemeSettingsService.AppAccentColor);
-            SelectionHighlightColorWhenNotFocused = new SolidColorBrush(ThemeSettingsService.AppAccentColor);
+            SelectionHighlightColorWhenNotFocused = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
             SelectionFlyout = null;
             HorizontalAlignment = HorizontalAlignment.Stretch;
             VerticalAlignment = VerticalAlignment.Stretch;
@@ -138,6 +139,7 @@ namespace Notepads.Controls.TextEditor
             TextChanging += OnTextChanging;
             TextChanged += OnTextChanged;
             SelectionChanging += OnSelectionChanging;
+            TextCompositionEnded += OnTextCompositionEnded;
 
             SetDefaultTabStopAndLineSpacing(FontFamily, FontSize);
             PointerWheelChanged += OnPointerWheelChanged;
@@ -392,6 +394,61 @@ namespace Notepads.Controls.TextEditor
         private void OnCuttingToClipboard(RichEditBox sender, TextControlCuttingToClipboardEventArgs args)
         {
             CutSelectedTextToWindowsClipboardRequested?.Invoke(sender, args);
+        }
+
+        private void OnTextCompositionEnded(object sender, TextCompositionEndedEventArgs args)
+        {
+            // IME確定範囲のみを正確にターゲットにする
+            int startIndex = args.StartIndex;
+            int length = args.Length;
+
+            // フェーズ1: 書式クリアを優先度高で先行実行
+            DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.High, () =>
+            {
+                try
+                {
+                    if (length > 0)
+                    {
+                        // 直接プロパティ設定（get/set往復による副作用を排除）
+                        Document.GetRange(startIndex, startIndex + length).CharacterFormat.Underline = UnderlineType.None;
+                    }
+                    else
+                    {
+                        Document.GetText(TextGetOptions.None, out var text);
+                        if (text.Length > 0)
+                        {
+                            Document.GetRange(0, text.Length).CharacterFormat.Underline = UnderlineType.None;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // Ignore
+                }
+
+                // フェーズ2: Win32 HWNDの再描画をノーマル優先度で続けて実行
+                // ChangeView は同一オフセットでも内部的にWin32再描画シグナルを送るため、
+                // TSFのGDI描画装飾がクリアされる
+                DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
+                {
+                    try
+                    {
+                        if (_contentScrollViewer != null)
+                        {
+                            _contentScrollViewer.ChangeView(
+                                _contentScrollViewer.HorizontalOffset,
+                                _contentScrollViewer.VerticalOffset,
+                                null,
+                                disableAnimation: true);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // Ignore
+                    }
+                    this.InvalidateArrange();
+                });
+            });
         }
 
         private void OnTextChanging(RichEditBox sender, RichEditBoxTextChangingEventArgs args)
@@ -689,22 +746,87 @@ namespace Notepads.Controls.TextEditor
                 args.Handled = true;
             }
 
-            if (!Document.CanPaste()) return;
+            if (IsReadOnly) return;
 
-            try
+            // WinUI 3 Desktop では await 後に SynchronizationContext がないため、
+            // Clipboard.GetContent() や Document 操作を非 UI スレッドから呼ぶと
+            // RPC_E_WRONG_THREAD が発生する。全処理を DispatcherQueue + TCS でラップする。
+            int retryCount = 7;
+            int delayMs = 50;
+
+            for (int i = 0; i < retryCount; i++)
             {
-                var dataPackageView = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
-                if (!dataPackageView.Contains(StandardDataFormats.Text)) return;
-                var text = await dataPackageView.GetTextAsync();
-                Document.BeginUndoGroup();
-                Document.Selection.SetText(TextSetOptions.None, text);
-                //Document.Selection.CharacterFormat.TextScript = TextScript.Ansi;
-                Document.Selection.StartPosition = Document.Selection.EndPosition;
-                Document.EndUndoGroup();
-            }
-            catch (Exception ex)
-            {
-                LoggingService.LogError($"[{nameof(TextEditorCore)}] Failed to paste plain text to Windows clipboard: {ex.Message}");
+                // UI スレッドでクリップボードを取得し、テキストの有無を確認
+                var tcsText = new TaskCompletionSource<(bool hasText, string text)>();
+                bool enqueued = DispatcherQueue.TryEnqueue(async () =>
+                {
+                    try
+                    {
+                        var dataPackageView = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
+                        if (dataPackageView != null && dataPackageView.Contains(StandardDataFormats.Text))
+                        {
+                            var t = await dataPackageView.GetTextAsync();
+                            tcsText.TrySetResult((true, t));
+                        }
+                        else
+                        {
+                            // クリップボードにテキストが存在しない
+                            tcsText.TrySetResult((false, null));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        tcsText.TrySetException(ex);
+                    }
+                });
+
+                if (!enqueued)
+                {
+                    LoggingService.LogError($"[{nameof(TextEditorCore)}] DispatcherQueue.TryEnqueue failed for clipboard read.");
+                    return;
+                }
+
+                bool succeeded = false;
+                bool hasText = false;
+                string text = null;
+
+                try
+                {
+                    (hasText, text) = await tcsText.Task;
+                    succeeded = true;
+                }
+                catch (Exception ex)
+                {
+                    if (i == retryCount - 1)
+                    {
+                        LoggingService.LogError($"[{nameof(TextEditorCore)}] Failed to retrieve plain text from clipboard after {retryCount} retries: {ex}");
+                        return;
+                    }
+                    await Task.Delay(delayMs);
+                    continue;
+                }
+
+                if (!hasText) return; // クリップボードにテキストなし
+
+                if (succeeded && text != null)
+                {
+                    // UI スレッドでテキストを貼り付け
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        try
+                        {
+                            Document.BeginUndoGroup();
+                            Document.Selection.SetText(TextSetOptions.None, text);
+                            Document.Selection.StartPosition = Document.Selection.EndPosition;
+                            Document.EndUndoGroup();
+                        }
+                        catch (Exception ex)
+                        {
+                            LoggingService.LogError($"[{nameof(TextEditorCore)}] Failed to paste plain text: {ex}");
+                        }
+                    });
+                }
+                return;
             }
         }
 
@@ -761,9 +883,11 @@ namespace Notepads.Controls.TextEditor
         private void SetDefaultTabStopAndLineSpacing(FontFamily font, double fontSize)
         {
             Document.DefaultTabStop = (float)FontUtility.GetTextSize(font, fontSize, "text").Width;
-            var format = Document.GetDefaultParagraphFormat();
-            format.SetLineSpacing(LineSpacingRule.Exactly, (float)fontSize);
-            Document.SetDefaultParagraphFormat(format);
+            // NOTE: WinUI 3 で日本語IMEの未確定文字列の下線が確定後も2行目以降に残る不具合を避けるため、
+            // 固定行間隔（Exactly）の設定は行いません。デフォルトの行間（Single）を使用します。
+            //var format = Document.GetDefaultParagraphFormat();
+            //format.SetLineSpacing(LineSpacingRule.Exactly, (float)fontSize);
+            //Document.SetDefaultParagraphFormat(format);
         }
 
         private void EnterWithAutoIndentation()

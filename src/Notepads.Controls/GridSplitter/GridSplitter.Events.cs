@@ -69,7 +69,7 @@ namespace Notepads.Controls
         protected override void OnKeyDown(KeyRoutedEventArgs e)
         {
             var step = 1;
-            var ctrl = Window.Current.CoreWindow.GetKeyState(VirtualKey.Control);
+            var ctrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control);
             if (ctrl.HasFlag(CoreVirtualKeyStates.Down))
             {
                 step = 5;
@@ -119,17 +119,34 @@ namespace Notepads.Controls
         protected override void OnManipulationStarted(ManipulationStartedRoutedEventArgs e)
         {
             // saving the previous state
-            PreviousCursor = Window.Current.CoreWindow.PointerCursor;
+            if (Window.Current != null)
+            {
+                PreviousCursor = Window.Current.CoreWindow.PointerCursor;
+            }
             _resizeDirection = GetResizeDirection();
             _resizeBehavior = GetResizeBehavior();
 
             if (_resizeDirection == GridResizeDirection.Columns)
             {
-                Window.Current.CoreWindow.PointerCursor = ColumnsSplitterCursor;
+                if (Window.Current != null)
+                {
+                    Window.Current.CoreWindow.PointerCursor = ColumnsSplitterCursor;
+                }
+                else
+                {
+                    this.ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast);
+                }
             }
             else if (_resizeDirection == GridResizeDirection.Rows)
             {
-                Window.Current.CoreWindow.PointerCursor = RowSplitterCursor;
+                if (Window.Current != null)
+                {
+                    Window.Current.CoreWindow.PointerCursor = RowSplitterCursor;
+                }
+                else
+                {
+                    this.ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth);
+                }
             }
 
             base.OnManipulationStarted(e);
@@ -138,7 +155,14 @@ namespace Notepads.Controls
         /// <inheritdoc />
         protected override void OnManipulationCompleted(ManipulationCompletedRoutedEventArgs e)
         {
-            Window.Current.CoreWindow.PointerCursor = PreviousCursor;
+            if (Window.Current != null)
+            {
+                Window.Current.CoreWindow.PointerCursor = PreviousCursor;
+            }
+            else
+            {
+                this.ProtectedCursor = null;
+            }
 
             base.OnManipulationCompleted(e);
         }

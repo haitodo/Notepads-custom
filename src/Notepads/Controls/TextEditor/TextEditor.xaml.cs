@@ -302,9 +302,21 @@ namespace Notepads.Controls.TextEditor
                 await EditingFile.RenameAsync(newFileName);
             }
 
-            UpdateDocumentInfo();
-
-            FileRenamed?.Invoke(this, EventArgs.Empty);
+            var tcs = new TaskCompletionSource<bool>();
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    UpdateDocumentInfo();
+                    FileRenamed?.Invoke(this, EventArgs.Empty);
+                    tcs.SetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+            await tcs.Task;
         }
 
         public string GetText()
@@ -495,14 +507,28 @@ namespace Notepads.Controls.TextEditor
             if (EditingFile != null)
             {
                 var textFile = await FileSystemUtility.ReadFileAsync(EditingFile, ignoreFileSizeLimit: false, encoding: encoding);
-                Init(textFile, EditingFile, clearUndoQueue: false);
-                LineEndingChanged?.Invoke(this, EventArgs.Empty);
-                EncodingChanged?.Invoke(this, EventArgs.Empty);
-                StartCheckingFileStatusPeriodically();
-                CloseSideBySideDiffViewer();
-                HideGoToControl();
-                FileReloaded?.Invoke(this, EventArgs.Empty);
-                AnalyticsService.TrackEvent(encoding == null ? "OnFileReloaded" : "OnFileReopenedWithEncoding");
+                
+                var tcs = new TaskCompletionSource<bool>();
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        Init(textFile, EditingFile, clearUndoQueue: false);
+                        LineEndingChanged?.Invoke(this, EventArgs.Empty);
+                        EncodingChanged?.Invoke(this, EventArgs.Empty);
+                        StartCheckingFileStatusPeriodically();
+                        CloseSideBySideDiffViewer();
+                        HideGoToControl();
+                        FileReloaded?.Invoke(this, EventArgs.Empty);
+                        AnalyticsService.TrackEvent(encoding == null ? "OnFileReloaded" : "OnFileReopenedWithEncoding");
+                        tcs.SetResult(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                });
+                await tcs.Task;
             }
         }
 
@@ -712,10 +738,24 @@ namespace Notepads.Controls.TextEditor
         {
             if (Mode == TextEditorMode.DiffPreview) CloseSideBySideDiffViewer();
             TextFile textFile = await SaveContentToFileAsync(file); // Will throw if not succeeded
-            FileModificationState = FileModificationState.Untouched;
-            Init(textFile, file, clearUndoQueue: false, resetText: false);
-            FileSaved?.Invoke(this, EventArgs.Empty);
-            StartCheckingFileStatusPeriodically();
+            
+            var tcs = new TaskCompletionSource<bool>();
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    FileModificationState = FileModificationState.Untouched;
+                    Init(textFile, file, clearUndoQueue: false, resetText: false);
+                    FileSaved?.Invoke(this, EventArgs.Empty);
+                    StartCheckingFileStatusPeriodically();
+                    tcs.SetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+            await tcs.Task;
         }
 
         private async Task<TextFile> SaveContentToFileAsync(StorageFile file)
@@ -899,8 +939,8 @@ namespace Notepads.Controls.TextEditor
 
         private void TextEditorCore_OnKeyDown(object sender, KeyRoutedEventArgs e)
         {
-            var ctrl = Window.Current.CoreWindow.GetKeyState(VirtualKey.Control);
-            var alt = Window.Current.CoreWindow.GetKeyState(VirtualKey.Menu);
+            var ctrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control);
+            var alt = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Menu);
 
             if (FindAndReplacePlaceholder?.Visibility == Visibility.Visible && !ctrl.HasFlag(CoreVirtualKeyStates.Down) && !alt.HasFlag(CoreVirtualKeyStates.Down))
             {

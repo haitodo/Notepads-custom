@@ -8,6 +8,8 @@ namespace Notepads.Controls
     using Windows.UI.Core;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Input;
+    using System.Reflection;
+    using Microsoft.UI.Input;
 
     internal class GripperHoverWrapper
     {
@@ -19,6 +21,20 @@ namespace Notepads.Controls
         private int _gripperCustomCursorResource;
         private bool _isDragging;
         private UIElement _element;
+
+        private void SetProtectedCursor(UIElement element, InputCursor cursor)
+        {
+            if (element == null) return;
+            try
+            {
+                var prop = typeof(UIElement).GetProperty("ProtectedCursor", BindingFlags.Instance | BindingFlags.NonPublic);
+                prop?.SetValue(element, cursor);
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to set ProtectedCursor: {ex}");
+            }
+        }
 
         internal GridSplitter.GripperCursorType GripperCursor
         {
@@ -68,7 +84,14 @@ namespace Notepads.Controls
             }
             else
             {
-                Window.Current.CoreWindow.PointerCursor = _previousCursor;
+                if (Window.Current != null)
+                {
+                    Window.Current.CoreWindow.PointerCursor = _previousCursor;
+                }
+                else
+                {
+                    SetProtectedCursor(_element, null);
+                }
             }
         }
 
@@ -77,7 +100,10 @@ namespace Notepads.Controls
             // if not dragging
             if (!_isDragging)
             {
-                _previousCursor = _splitterPreviousPointer = Window.Current.CoreWindow.PointerCursor;
+                if (Window.Current != null)
+                {
+                    _previousCursor = _splitterPreviousPointer = Window.Current.CoreWindow.PointerCursor;
+                }
                 UpdateDisplayCursor();
             }
 
@@ -90,30 +116,59 @@ namespace Notepads.Controls
 
         private void UpdateDisplayCursor()
         {
-            if (_gripperCursor == GridSplitter.GripperCursorType.Default)
+            if (Window.Current != null)
             {
-                if (_gridSplitterDirection == GridSplitter.GridResizeDirection.Columns)
+                if (_gripperCursor == GridSplitter.GripperCursorType.Default)
                 {
-                    Window.Current.CoreWindow.PointerCursor = GridSplitter.ColumnsSplitterCursor;
-                }
-                else if (_gridSplitterDirection == GridSplitter.GridResizeDirection.Rows)
-                {
-                    Window.Current.CoreWindow.PointerCursor = GridSplitter.RowSplitterCursor;
-                }
-            }
-            else
-            {
-                var coreCursor = (CoreCursorType)((int)_gripperCursor);
-                if (_gripperCursor == GridSplitter.GripperCursorType.Custom)
-                {
-                    if (_gripperCustomCursorResource > GridSplitter.GripperCustomCursorDefaultResource)
+                    if (_gridSplitterDirection == GridSplitter.GridResizeDirection.Columns)
                     {
-                        Window.Current.CoreWindow.PointerCursor = new CoreCursor(coreCursor, (uint)_gripperCustomCursorResource);
+                        Window.Current.CoreWindow.PointerCursor = GridSplitter.ColumnsSplitterCursor;
+                    }
+                    else if (_gridSplitterDirection == GridSplitter.GridResizeDirection.Rows)
+                    {
+                        Window.Current.CoreWindow.PointerCursor = GridSplitter.RowSplitterCursor;
                     }
                 }
                 else
                 {
-                    Window.Current.CoreWindow.PointerCursor = new CoreCursor(coreCursor, 1);
+                    var coreCursor = (CoreCursorType)((int)_gripperCursor);
+                    if (_gripperCursor == GridSplitter.GripperCursorType.Custom)
+                    {
+                        if (_gripperCustomCursorResource > GridSplitter.GripperCustomCursorDefaultResource)
+                        {
+                            Window.Current.CoreWindow.PointerCursor = new CoreCursor(coreCursor, (uint)_gripperCustomCursorResource);
+                        }
+                    }
+                    else
+                    {
+                        Window.Current.CoreWindow.PointerCursor = new CoreCursor(coreCursor, 1);
+                    }
+                }
+            }
+            else
+            {
+                // WinUI 3 fallback
+                if (_gripperCursor == GridSplitter.GripperCursorType.Default)
+                {
+                    if (_gridSplitterDirection == GridSplitter.GridResizeDirection.Columns)
+                    {
+                        SetProtectedCursor(_element, Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast));
+                    }
+                    else if (_gridSplitterDirection == GridSplitter.GridResizeDirection.Rows)
+                    {
+                        SetProtectedCursor(_element, Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth));
+                    }
+                }
+                else if (_gripperCursor == GridSplitter.GripperCursorType.Custom)
+                {
+                    if (_gripperCustomCursorResource > GridSplitter.GripperCustomCursorDefaultResource)
+                    {
+                        SetProtectedCursor(_element, Microsoft.UI.Input.InputDesktopResourceCursor.Create((uint)_gripperCustomCursorResource));
+                    }
+                }
+                else
+                {
+                    SetProtectedCursor(_element, null);
                 }
             }
         }
@@ -136,7 +191,14 @@ namespace Notepads.Controls
                 return;
             }
 
-            Window.Current.CoreWindow.PointerCursor = splitter.PreviousCursor = _splitterPreviousPointer;
+            if (Window.Current != null)
+            {
+                Window.Current.CoreWindow.PointerCursor = splitter.PreviousCursor = _splitterPreviousPointer;
+            }
+            else
+            {
+                SetProtectedCursor(_element, null);
+            }
             _isDragging = false;
         }
 

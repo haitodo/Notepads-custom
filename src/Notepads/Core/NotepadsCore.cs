@@ -178,7 +178,7 @@ namespace Notepads.Core
             bool ignoreFileSizeLimit = false)
         {
             var textFile = await FileSystemUtility.ReadFileAsync(file, ignoreFileSizeLimit, encoding);
-            return CreateTextEditor(id, textFile, file, file.Name);
+            return await ThreadUtility.RunOnUIThreadAsync(() => CreateTextEditor(id, textFile, file, file.Name));
         }
 
         public ITextEditor CreateTextEditor(
